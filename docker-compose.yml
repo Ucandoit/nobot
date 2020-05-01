@@ -1,0 +1,12 @@
+version: '3'
+services:
+  nobot-redis:
+    image: 'redis'
+  nobot-token-manager:
+    build:
+      context: ./
+      dockerfile: ./packages/token-manager/Dockerfile
+    volumes:
+      - /usr/src/app/node_modules
+      - /usr/src/app/packages/token-manager/node_modules
+      - .:/usr/src/app

@@ -1,0 +1,24 @@
+{
+  "name": "@nobot/token-manager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nobot token manager",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "build": "tsc -b ./tsconfig.build.json",
+    "watch": "tsc -b ./tsconfig.build.json --watch",
+    "dev": "yarn build && nodemon"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "dependencies": {
+    "redis": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/redis": "^2.8.18",
+    "nodemon": "^2.0.3"
+  }
+}
