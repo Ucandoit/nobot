@@ -1,7 +1,18 @@
 version: '3'
 services:
   nobot-redis:
-    image: 'redis'
+    image: redis
+  nobot-database:
+    image: postgres
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: nobot
+      POSTGRES_USER: nobot
+      POSTGRES_PASSWORD: nobot
+    volumes:
+      - nobot-pgdata:/var/lib/postgresql/data/pgdata
+    ports:
+      - '5432:5432'
   nobot-token-manager:
     build:
       context: ./
@@ -10,3 +21,5 @@ services:
       - /usr/src/app/node_modules
       - /usr/src/app/packages/token-manager/node_modules
       - .:/usr/src/app
+volumes:
+    nobot-pgdata:
