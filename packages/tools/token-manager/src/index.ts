@@ -1,3 +1,4 @@
+import initConnection from '@nobot-core/database';
 import redis from 'redis';
 
 const redisClient = redis.createClient({
@@ -12,5 +13,10 @@ const redisClient = redis.createClient({
     return 5000;
   }
 });
-console.log('Setting.');
+
 redisClient.set('test', '1');
+
+// init postgres
+initConnection().then(() => {
+  console.log('init finish');
+});

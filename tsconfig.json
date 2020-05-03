@@ -3,7 +3,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@nobot/*": ["./packages/*/src"]
+      "@nobot-api/*": ["./packages/api/*/src"],
+      "@nobot-core/*": ["./packages/core/*/src"],
+      "@nobot-tools/*": ["./packages/tools/*/src"]
     }
   }
 }

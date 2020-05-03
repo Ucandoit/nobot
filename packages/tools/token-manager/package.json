@@ -1,5 +1,5 @@
 {
-  "name": "@nobot/token-manager",
+  "name": "@nobot-tools/token-manager",
   "version": "0.1.0",
   "private": true,
   "description": "Nobot token manager",
@@ -15,7 +15,9 @@
     "src"
   ],
   "dependencies": {
-    "redis": "^3.0.2"
+    "@nobot-core/database": "0.1.0",
+    "redis": "^3.0.2",
+    "typeorm": "^0.2.24"
   },
   "devDependencies": {
     "@types/redis": "^2.8.18",

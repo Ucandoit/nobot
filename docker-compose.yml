@@ -16,10 +16,11 @@ services:
   nobot-token-manager:
     build:
       context: ./
-      dockerfile: ./packages/token-manager/Dockerfile
+      dockerfile: ./packages/tools/token-manager/Dockerfile
     volumes:
       - /usr/src/app/node_modules
-      - /usr/src/app/packages/token-manager/node_modules
+      - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/tools/token-manager/node_modules
       - .:/usr/src/app
 volumes:
     nobot-pgdata:

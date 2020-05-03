@@ -2,8 +2,8 @@
   "name": "root",
   "private": true,
   "scripts": {
-    "lint": "yarn prettier && eslint 'packages/**/**/*.ts'",
-    "prettier": "prettier --write 'packages/**/**/*.ts'",
+    "lint": "yarn prettier && eslint 'packages/**/*.ts'",
+    "prettier": "prettier --write 'packages/**/*.ts'",
     "start:dev": "docker-compose up"
   },
   "devDependencies": {
@@ -23,7 +23,9 @@
     "typescript": "^3.8.3"
   },
   "workspaces": [
-    "packages/*"
+    "packages/api/*",
+    "packages/core/*",
+    "packages/tools/*"
   ],
   "lint-staged": {
     "*.{ts,tsx}": [
