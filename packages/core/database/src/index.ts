@@ -18,3 +18,4 @@ export const initConnection = async (): Promise<Connection> => {
 };
 
 export default initConnection;
+export { Account };

@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc -b ./tsconfig.build.json",
     "watch": "tsc -b ./tsconfig.build.json --watch",
-    "dev": "yarn build && nodemon"
+    "dev": "yarn build && nodemon",
+    "start": "node ./lib/index.js"
   },
   "files": [
     "lib",
@@ -16,11 +17,14 @@
   ],
   "dependencies": {
     "@nobot-core/database": "0.1.0",
+    "log4js": "^6.2.1",
     "redis": "^3.0.2",
+    "superagent": "^5.2.2",
     "typeorm": "^0.2.24"
   },
   "devDependencies": {
     "@types/redis": "^2.8.18",
+    "@types/superagent": "^4.1.7",
     "nodemon": "^2.0.3"
   }
 }

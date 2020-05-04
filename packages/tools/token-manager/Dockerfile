@@ -1,13 +1,34 @@
-FROM node:alpine
+FROM node:alpine as builder
+ENV NODE_ENV production
 
 WORKDIR /usr/src/app
 
-RUN npm i -g lerna
+COPY package.json .
+COPY yarn.lock .
 
-COPY package.json yarn.lock lerna.json ./
-COPY tsconfig.base.json ./
-COPY packages/core/database ./packages/core/database
-COPY packages/tools/token-manager ./packages/tools/token-manager
-RUN lerna bootstrap
+COPY packages/core/database/package.json ./packages/core/database/package.json
+COPY packages/tools/token-manager/package.json ./packages/tools/token-manager/package.json
+RUN yarn workspace @nobot-tools/token-manager install
 
-CMD [ "npm", "run", "--prefix", "packages/tools/token-manager", "dev" ]
+FROM node:alpine
+ENV NODE_ENV production
+
+WORKDIR /usr/src/app
+
+COPY package.json .
+COPY yarn.lock .
+
+COPY packages/core/database/package.json ./packages/core/database/package.json
+COPY packages/tools/token-manager/package.json ./packages/tools/token-manager/package.json
+
+COPY packages/core/database/lib ./packages/core/database/lib
+COPY packages/tools/token-manager/lib ./packages/tools/token-manager/lib
+
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+
+COPY --from=builder /usr/src/app/packages/core/database/node_modules ./packages/core/database/node_modules
+COPY --from=builder /usr/src/app/packages/tools/token-manager/node_modules ./packages/tools/token-manager/node_modules
+
+WORKDIR /usr/src/app/packages/tools/token-manager
+
+CMD ["npm", "run", "start"]

@@ -24,6 +24,9 @@
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      },
+      "eslint-import-resolver-lerna": {
+        "packages": ["./packages/core", "./packages/tools"]
       }
     }
   },
@@ -38,6 +41,6 @@
         "tsx": "never"
       }
     ],
-    "import/no-unresolved": 0
+    // "import/no-unresolved": 0
   }
 }

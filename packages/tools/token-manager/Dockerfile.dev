@@ -1,0 +1,16 @@
+FROM node:alpine
+
+WORKDIR /usr/src/app
+
+RUN npm i -g lerna
+
+COPY package.json yarn.lock lerna.json ./
+COPY packages/core/database/package.json packages/core/database/package.json
+COPY packages/tools/token-manager/package.json packages/tools/token-manager/package.json
+RUN yarn workspace @nobot-tools/token-manager install
+
+# COPY tsconfig.base.json ./
+# COPY packages/core/database ./packages/core/database
+# COPY packages/tools/token-manager ./packages/tools/token-manager
+
+CMD [ "npm", "run", "--prefix", "packages/tools/token-manager", "dev" ]
