@@ -1,0 +1,10 @@
+FROM node:alpine
+
+WORKDIR /usr/src/app
+
+COPY package.json yarn.lock ./
+COPY packages/core/database/package.json packages/core/database/package.json
+COPY packages/api/auction-sniping/package.json packages/api/auction-sniping/package.json
+RUN yarn workspace @nobot-api/auction-sniping install
+
+CMD [ "npm", "run", "--prefix", "packages/api/auction-sniping", "dev" ]
