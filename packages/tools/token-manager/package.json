@@ -17,6 +17,7 @@
   ],
   "dependencies": {
     "@nobot-core/database": "0.1.0",
+    "@nobot-core/commons": "0.1.0",
     "log4js": "^6.2.1",
     "redis": "^3.0.2",
     "superagent": "^5.2.2",

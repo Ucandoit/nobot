@@ -1,15 +1,13 @@
 {
-  "name": "@nobot-api/auction-sniping",
+  "name": "@nobot-core/commons",
   "version": "0.1.0",
   "private": true,
-  "description": "Nobot auction sniping module",
+  "description": "Nobot common module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
     "build": "tsc -b ./tsconfig.build.json",
-    "watch": "tsc -b ./tsconfig.build.json --watch",
-    "dev": "nodemon",
-    "start": "node ./lib/index.js"
+    "watch": "tsc -b ./tsconfig.build.json --watch"
   },
   "files": [
     "lib",
@@ -17,17 +15,13 @@
   ],
   "dependencies": {
     "@nobot-core/database": "0.1.0",
-    "@nobot-core/commons": "0.1.0",
-    "express": "^4.17.1",
     "log4js": "^6.2.1",
     "redis": "^3.0.2",
     "superagent": "^5.2.2",
     "typeorm": "^0.2.24"
   },
   "devDependencies": {
-    "@types/express": "^4.17.6",
     "@types/redis": "^2.8.18",
-    "@types/superagent": "^4.1.7",
-    "nodemon": "^2.0.3"
+    "@types/superagent": "^4.1.7"
   }
 }

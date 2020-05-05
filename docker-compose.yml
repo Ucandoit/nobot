@@ -21,6 +21,7 @@ services:
     volumes:
       - /usr/src/app/node_modules
       - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/tools/token-manager/node_modules
       - .:/usr/src/app
   auction-sniping:
@@ -30,6 +31,7 @@ services:
     volumes:
       - /usr/src/app/node_modules
       - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/auction-sniping/node_modules
       - .:/usr/src/app
     ports:

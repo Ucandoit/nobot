@@ -11,6 +11,9 @@
   "references": [
     {
       "path": "../../core/database/tsconfig.build.json"
+    },
+    {
+      "path": "../../core/commons/tsconfig.build.json"
     }
   ]
 }

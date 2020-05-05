@@ -7,6 +7,7 @@ COPY package.json .
 COPY yarn.lock .
 
 COPY packages/core/database/package.json ./packages/core/database/package.json
+COPY packages/core/commons/package.json ./packages/core/commons/package.json
 COPY packages/tools/token-manager/package.json ./packages/tools/token-manager/package.json
 RUN yarn workspace @nobot-tools/token-manager install
 
@@ -19,14 +20,17 @@ COPY package.json .
 COPY yarn.lock .
 
 COPY packages/core/database/package.json ./packages/core/database/package.json
+COPY packages/core/commons/package.json ./packages/core/commons/package.json
 COPY packages/tools/token-manager/package.json ./packages/tools/token-manager/package.json
 
 COPY packages/core/database/lib ./packages/core/database/lib
+COPY packages/core/commons/lib ./packages/core/commons/lib
 COPY packages/tools/token-manager/lib ./packages/tools/token-manager/lib
 
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 
 COPY --from=builder /usr/src/app/packages/core/database/node_modules ./packages/core/database/node_modules
+COPY --from=builder /usr/src/app/packages/core/commons/node_modules ./packages/core/commons/node_modules
 COPY --from=builder /usr/src/app/packages/tools/token-manager/node_modules ./packages/tools/token-manager/node_modules
 
 WORKDIR /usr/src/app/packages/tools/token-manager

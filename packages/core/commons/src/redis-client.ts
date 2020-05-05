@@ -2,7 +2,7 @@ import { getLogger } from 'log4js';
 import redis from 'redis';
 
 class RedisClient {
-  private logger = getLogger('redisClient');
+  private logger = getLogger(RedisClient.name);
 
   private redisClient: redis.RedisClient;
 

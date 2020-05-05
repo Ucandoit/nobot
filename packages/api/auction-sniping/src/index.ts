@@ -1,7 +1,7 @@
+import { redisClient } from '@nobot-core/commons';
 import initConnection from '@nobot-core/database';
 import express from 'express';
 import { configure } from 'log4js';
-import redisClient from './config/redis-client';
 
 configure({
   appenders: {
@@ -20,13 +20,14 @@ initConnection().then(() => {
     res.send(`Hello World`);
   });
 
-  // app.get('/start', async (req, res) => {
-  //   const { login } = req.query;
-  //   if (login) {
-  //     const token = await redisClient.get(`token-${login}`);
-  //   }
-  //   res.send('OK');
-  // });
+  app.get('/start', async (req, res) => {
+    const { login } = req.query;
+    if (login) {
+      const token = await redisClient.get(`token-${login}`);
+      console.log(token);
+    }
+    res.send('OK');
+  });
 
   app.listen(3000);
 });
