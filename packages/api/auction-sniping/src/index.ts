@@ -2,6 +2,7 @@ import { redisClient } from '@nobot-core/commons';
 import initConnection from '@nobot-core/database';
 import express from 'express';
 import { configure } from 'log4js';
+import auctionService from './auction/auction-service';
 
 configure({
   appenders: {
@@ -10,6 +11,8 @@ configure({
   categories: { default: { appenders: ['out'], level: 'info' } },
   disableClustering: true
 });
+
+// const logger = getLogger('auction-sniping-index');
 
 initConnection().then(() => {
   const app = express();
@@ -22,12 +25,11 @@ initConnection().then(() => {
 
   app.get('/start', async (req, res) => {
     const { login } = req.query;
-    if (login) {
-      const token = await redisClient.get(`token-${login}`);
-      console.log(token);
-    }
+    auctionService.startSniping(login as string);
     res.send('OK');
   });
+
+  // auctionService.startSniping('xzdykerik');
 
   app.listen(3000);
 });

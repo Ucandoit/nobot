@@ -7,7 +7,7 @@ import redisClient from './redis-client';
 class TokenManager {
   logger = getLogger(TokenManager.name);
 
-  updateToken = async (account: Account): Promise<void> => {
+  updateToken = async (account: Account): Promise<string> => {
     this.logger.info('Updating for %s.', account.login);
     const res = await superagent.get('http://yahoo-mbga.jp/game/12004455/play').set('Cookie', account.cookie);
     const html = res.text;
@@ -15,10 +15,13 @@ class TokenManager {
     if (a && a.length > 0) {
       const b = a[1].match(/http:\/\/.+&st=(.+?)#rpctoken.+/);
       if (b && b.length > 0) {
-        redisClient.set(`token-${account.login}`, decodeURIComponent(b[1]));
+        const token = decodeURIComponent(b[1]);
+        redisClient.set(`token-${account.login}`, token);
+        this.logger.info('Updated for %s.', account.login);
+        return token;
       }
     }
-    this.logger.info('Updated for %s.', account.login);
+    throw new Error('Error while updating token.');
   };
 
   updateTokens = async (): Promise<void> => {
