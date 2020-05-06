@@ -7,7 +7,7 @@
     "composite": true
   },
   "include": ["src"],
-  "exclude": ["tests", "lib"],
+  "exclude": ["__tests__", "lib"],
   "references": [
     {
       "path": "../database/tsconfig.build.json"

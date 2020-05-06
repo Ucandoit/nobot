@@ -1,7 +1,8 @@
 {
   "root": true,
   "env": {
-    "node": true
+    "node": true,
+    "jest": true
   },
   "extends": [
     "airbnb-base",
@@ -12,7 +13,7 @@
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": "./packages/**/tsconfig.build.json",
+    "project": "./packages/*/tsconfig.build.json",
     "sourceType": "module"
   },
   "plugins": ["@typescript-eslint"],
@@ -30,6 +31,7 @@
       }
     }
   },
+  "ignorePatterns": ["lib/", "node_modules/"],
   "rules": {
     "import/extensions": [
       "error",
