@@ -2,6 +2,8 @@ version: '3'
 services:
   nobot-redis:
     image: redis
+    ports:
+      - '6379:6379'
   nobot-database:
     image: postgres
     environment:
@@ -14,16 +16,6 @@ services:
       - nobot-pgdata:/var/lib/postgresql/data/pgdata
     ports:
       - '5433:5432'
-  nobot-token-manager:
-    build:
-      context: ./
-      dockerfile: ./packages/tools/token-manager/Dockerfile.dev
-    volumes:
-      - /usr/src/app/node_modules
-      - /usr/src/app/packages/core/database/node_modules
-      - /usr/src/app/packages/core/commons/node_modules
-      - /usr/src/app/packages/tools/token-manager/node_modules
-      - .:/usr/src/app
   auction-sniping:
     build:
       context: ./
