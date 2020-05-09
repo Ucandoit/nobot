@@ -1,8 +1,7 @@
 import { redisClient } from '@nobot-core/commons';
 import initConnection from '@nobot-core/database';
-import express from 'express';
-import { configure } from 'log4js';
-import auctionService from './auction/auction-service';
+import { configure, getLogger } from 'log4js';
+import startApp from './app';
 
 configure({
   appenders: {
@@ -12,24 +11,22 @@ configure({
   disableClustering: true
 });
 
-// const logger = getLogger('auction-sniping-index');
+const logger = getLogger('auction-sniping-index');
+
+redisClient.start({
+  host: 'nobot-redis',
+  port: 6379,
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  retry_strategy: (options) => {
+    logger.info('Retrying.');
+    if (options.attempt > 5) {
+      throw new Error('Retry attempts reached.');
+    }
+    return 5000;
+  }
+});
 
 initConnection().then(() => {
-  const app = express();
-
-  redisClient.start();
-
-  app.get('/', async (req, res) => {
-    res.send(`Hello World`);
-  });
-
-  app.get('/start', async (req, res) => {
-    const { login } = req.query;
-    auctionService.startSniping(login as string);
-    res.send('OK');
-  });
-
-  // auctionService.startSniping('xzdykerik');
-
-  app.listen(3000);
+  logger.info('init postgres.');
+  startApp();
 });

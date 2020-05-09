@@ -39,9 +39,29 @@ class RedisClient {
     });
   };
 
-  set = (key: string, value: string, seconds = 45 * 60): void => {
-    this.redisClient.set(key, value);
-    this.redisClient.expire(key, seconds);
+  set = (key: string, value: string, seconds?: number): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      this.redisClient.set(key, value, (err) => {
+        if (err) {
+          reject(err);
+        }
+        if (seconds) {
+          this.redisClient.expire(key, seconds);
+        }
+        resolve();
+      });
+    });
+  };
+
+  ttl = (key: string): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      this.redisClient.ttl(key, (err, seconds) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(seconds);
+      });
+    });
   };
 }
 

@@ -1,8 +1,7 @@
 import { Connection, createConnection } from 'typeorm';
-import Account from './entities/Account';
+import { Account, AuctionConfig, AuctionHistory, Parameter } from './entities';
 
-export const initConnection = async (): Promise<Connection> => {
-  console.log('init postgres 3');
+const initConnection = async (): Promise<Connection> => {
   return createConnection({
     type: 'postgres',
     host: 'nobot-database',
@@ -12,10 +11,10 @@ export const initConnection = async (): Promise<Connection> => {
     database: 'nobot',
     schema: 'public',
     synchronize: true,
-    entities: [Account],
+    entities: [Account, AuctionConfig, AuctionHistory, Parameter],
     logging: true
   });
 };
 
+export * from './entities';
 export default initConnection;
-export { Account };
