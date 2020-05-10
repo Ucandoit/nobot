@@ -12,7 +12,7 @@ const initConnection = async (): Promise<Connection> => {
     schema: 'public',
     synchronize: true,
     entities: [Account, AuctionConfig, AuctionHistory, Parameter],
-    logging: true
+    logging: false
   });
 };
 

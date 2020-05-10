@@ -1,7 +1,9 @@
 import { redisClient } from '@nobot-core/commons';
 import initConnection from '@nobot-core/database';
 import { configure, getLogger } from 'log4js';
+import { scheduleJob } from 'node-schedule';
 import startApp from './app';
+import auctionService from './auction/auction-service';
 
 configure({
   appenders: {
@@ -29,4 +31,5 @@ redisClient.start({
 initConnection().then(() => {
   logger.info('init postgres.');
   startApp();
+  scheduleJob('0 0 15 * * *', auctionService.dailyReset);
 });

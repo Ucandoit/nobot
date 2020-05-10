@@ -30,7 +30,7 @@ class TokenManager {
       const b = a[1].match(/http:\/\/.+&st=(.+?)#rpctoken.+/);
       if (b && b.length > 0) {
         const token = decodeURIComponent(b[1]);
-        await redisClient.set(`token-${account.login}`, token);
+        await redisClient.set(`token-${account.login}`, token, 30 * 60);
         this.logger.info('Updated for %s.', account.login);
         return token;
       }

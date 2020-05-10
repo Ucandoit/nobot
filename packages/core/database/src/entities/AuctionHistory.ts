@@ -13,6 +13,9 @@ export default class AuctionHistory {
   @Column('character varying', { name: 'card_name', length: 255 })
   cardName: string;
 
+  @Column('integer', { name: 'card_star', default: () => '0' })
+  cardStar: number;
+
   @Column('character varying', { name: 'card_illust', length: 255, nullable: true })
   cardIllust: string | null;
 

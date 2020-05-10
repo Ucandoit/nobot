@@ -53,6 +53,17 @@ class RedisClient {
     });
   };
 
+  del = (key: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      this.redisClient.del(key, (err) => {
+        if (err) {
+          reject(err);
+        }
+        resolve();
+      });
+    });
+  };
+
   ttl = (key: string): Promise<number> => {
     return new Promise((resolve, reject) => {
       this.redisClient.ttl(key, (err, seconds) => {

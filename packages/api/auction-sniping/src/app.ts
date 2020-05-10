@@ -4,22 +4,27 @@ import auctionService from './auction/auction-service';
 export default (): void => {
   const app = express();
 
-  app.get('/', async (req, res) => {
-    res.send(`Hello World`);
-  });
-
   app.get('/start', async (req, res) => {
     const { login } = req.query;
     auctionService.startSniping(login as string);
-    res.send('OK');
+    res.status(200).send();
+  });
+
+  app.get('/stop', async (req, res) => {
+    const { login } = req.query;
+    auctionService.stopSniping(login as string);
+    res.status(200).send();
   });
 
   app.get('/start/all', async (req, res) => {
     auctionService.startAll();
-    res.send('OK');
+    res.status(200).send();
   });
 
-  // auctionService.startAll();
+  app.get('/stop/all', async (req, res) => {
+    auctionService.stopAll();
+    res.status(200).send();
+  });
 
   app.listen(3000);
 };
