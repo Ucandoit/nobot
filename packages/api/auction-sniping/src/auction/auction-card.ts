@@ -4,7 +4,7 @@ export interface AuctionCard {
   rarity: string;
   star: number;
   name: string;
-  illust: string | undefined;
+  illust: string | null;
   price: number;
   currentNP: number;
   requestParams: string;

@@ -1,8 +1,10 @@
 import { makeRequest, NOBOT_URL, redisClient, tokenManager } from '@nobot-core/commons';
+import { AuctionHistory } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Job, scheduleJob } from 'node-schedule';
 import { AuctionCard } from './auction-card';
 import auctionConfigService from './auction-config-service';
+import auctionHistoryService from './auction-history-service';
 
 class AuctionService {
   private logger = getLogger(AuctionService.name);
@@ -26,7 +28,7 @@ class AuctionService {
     this.logger.info('Start all auction sniping.');
     const auctionConfigs = await auctionConfigService.getAuctionConfigs();
     const now = new Date();
-    const offset = -9;
+    const offset = 3;
     auctionConfigs.forEach(async (auctionConfig) => {
       const startTime = this.calculateStartTime(auctionConfig.startHour, now, offset);
       const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
@@ -73,7 +75,7 @@ class AuctionService {
         // get count from redis
         const countString = await redisClient.get(`sniping-count-${login}`);
         const count = countString ? parseInt(countString, 10) : 1;
-        if (count > 15) {
+        if (count > 1950) {
           this.logger.info('Max times reached for %s', login);
           job.cancel();
           return;
@@ -83,9 +85,28 @@ class AuctionService {
         const token = await tokenManager.getToken(login);
         const searchResultPage = (await makeRequest(searchUrl, 'GET', token)) as CheerioStatic;
         if (searchResultPage('#work-headers').length > 0) {
+          // read html content to get card info
           const auctionCard = this.readFromPage(searchResultPage);
           if (auctionCard) {
-            // TODO
+            this.logger.info('Card found for %s.', login);
+            if (auctionCard.currentNP >= auctionCard.price) {
+              this.logger.info('Trying to buy for %s.', login);
+              // request buy card
+              await makeRequest(NOBOT_URL.TRADE_BUY, 'POST', token, auctionCard.requestParams);
+              // save in history
+              await auctionHistoryService.save({
+                cardRarity: auctionCard.rarity,
+                cardName: auctionCard.name,
+                cardStar: auctionCard.star,
+                cardIllust: auctionCard.illust,
+                cardPrice: auctionCard.price,
+                snipeTime: new Date(),
+                account: { login }
+              } as AuctionHistory);
+            } else {
+              this.logger.info('Not enough money for %s.', login);
+              // TODO can be saved for consulting
+            }
           } else {
             this.logger.info('Nothing found for %s.', login);
           }
@@ -106,7 +127,6 @@ class AuctionService {
       let tradeBuyId = '';
       let cardBuyId = '';
       const classNames = first.attr('class')?.split(' ');
-      this.logger.info(classNames);
       if (classNames && classNames.length > 0) {
         classNames.forEach((className) => {
           if (className.startsWith('trade-buy-id')) {
@@ -128,7 +148,7 @@ class AuctionService {
         rarity: this.getRarity(rarityImg),
         star: this.getStar(rarityImg),
         name,
-        illust,
+        illust: illust || null,
         price,
         currentNP: np,
         requestParams

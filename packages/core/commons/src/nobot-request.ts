@@ -6,12 +6,19 @@ import { jsonParser } from './response-parser';
 
 const baseUrl = 'http://e824549fb2ec8582e96abe565514e1aa9a3fca00.app.mbga-platform.jp/gadgets/makeRequest';
 
-const makeRequest = async (url: string, method: string, token: string): Promise<string | CheerioStatic> => {
+const makeRequest = async (
+  url: string,
+  method: string,
+  token: string,
+  postData?: string
+): Promise<string | CheerioStatic> => {
   const res = await post(baseUrl)
     .set('Content-Type', 'application/x-www-form-urlencoded')
     .send({
       url,
       httpMethod: method,
+      postData: postData || '',
+      headers: postData ? 'Content-Type=application%2Fx-www-form-urlencoded' : '',
       authz: 'signed',
       st: token,
       contentType: 'TEXT',

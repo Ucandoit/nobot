@@ -25,7 +25,10 @@ export default class AuctionHistory {
   @Column('timestamp with time zone', { name: 'snipe_time' })
   snipeTime: Date;
 
+  @Column('boolean', { name: 'bought', nullable: true })
+  bought: boolean | null;
+
   @ManyToOne(() => Account)
   @JoinColumn([{ name: 'login', referencedColumnName: 'login' }])
-  login: Account;
+  account: Account;
 }
