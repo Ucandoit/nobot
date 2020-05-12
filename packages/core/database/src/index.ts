@@ -1,5 +1,5 @@
 import { Connection, createConnection } from 'typeorm';
-import { Account, AuctionConfig, AuctionHistory, Parameter } from './entities';
+import { Account, AuctionConfig, AuctionHistory, Card, Parameter } from './entities';
 
 const initConnection = async (): Promise<Connection> => {
   return createConnection({
@@ -11,7 +11,7 @@ const initConnection = async (): Promise<Connection> => {
     database: 'nobot',
     schema: 'public',
     synchronize: true,
-    entities: [Account, AuctionConfig, AuctionHistory, Parameter],
+    entities: [Account, AuctionConfig, AuctionHistory, Card, Parameter],
     logging: false
   });
 };

@@ -1,0 +1,11 @@
+FROM node:alpine
+
+WORKDIR /usr/src/app
+
+COPY package.json yarn.lock ./
+COPY packages/core/database/package.json packages/core/database/package.json
+COPY packages/core/commons/package.json packages/core/commons/package.json
+COPY packages/api/card/package.json packages/api/card/package.json
+RUN yarn workspace @nobot-api/card install
+
+CMD [ "npm", "run", "--prefix", "packages/api/card", "dev" ]
