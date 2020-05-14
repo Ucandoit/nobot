@@ -28,5 +28,17 @@ services:
       - .:/usr/src/app
     ports:
       - '4001:3000'
+  card:
+    build:
+      context: ./
+      dockerfile: ./packages/api/card/Dockerfile.dev
+    volumes:
+      - /usr/src/app/node_modules
+      - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/api/card/node_modules
+      - .:/usr/src/app
+    ports:
+      - '4002:3000'
 volumes:
     nobot-pgdata:

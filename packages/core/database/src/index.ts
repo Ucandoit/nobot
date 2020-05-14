@@ -1,18 +1,26 @@
 import { Connection, createConnection } from 'typeorm';
-import { Account, AuctionConfig, AuctionHistory, Card, Parameter } from './entities';
+import { Account, AccountCard, AuctionConfig, AuctionHistory, Card, Parameter, StoreCard } from './entities';
 
-const initConnection = async (): Promise<Connection> => {
+export interface PostgresConnectionOptions {
+  host: string;
+  port?: number;
+  username: string;
+  password: string;
+  database: string;
+  schema?: string;
+  synchronize?: boolean;
+  logging?: boolean;
+}
+
+const initConnection = async (options: PostgresConnectionOptions): Promise<Connection> => {
   return createConnection({
     type: 'postgres',
-    host: 'nobot-database',
     port: 5432,
-    username: 'nobot',
-    password: 'nobot',
-    database: 'nobot',
     schema: 'public',
     synchronize: true,
-    entities: [Account, AuctionConfig, AuctionHistory, Card, Parameter],
-    logging: false
+    entities: [Account, AuctionConfig, AuctionHistory, Card, Parameter, AccountCard, StoreCard],
+    logging: false,
+    ...options
   });
 };
 
