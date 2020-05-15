@@ -31,7 +31,7 @@ const makeRequest = async (
     })
     .buffer(true)
     .parse(jsonParser);
-  if (res.body[url].headers) {
+  if (res.body[url].headers && res.body[url].headers.location) {
     return res.body[url].headers.location[0];
   }
   return cheerio.load(res.body[url].body);
