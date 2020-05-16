@@ -5,7 +5,8 @@
     "lint": "yarn prettier && eslint 'packages/**/*.ts'",
     "prettier": "prettier --write 'packages/**/*.ts'",
     "start:dev": "docker-compose up",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "start:single": "docker-compose up --no-deps"
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",

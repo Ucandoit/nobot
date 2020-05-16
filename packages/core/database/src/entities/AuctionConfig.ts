@@ -13,6 +13,9 @@ export default class AuctionConfig {
   @Column('integer', { name: 'start_hour', default: () => '0' })
   startHour: number;
 
+  @Column('character varying', { name: 'comment', nullable: true, length: 255 })
+  comment: string | null;
+
   @OneToOne(() => Account)
   @JoinColumn([{ name: 'login', referencedColumnName: 'login' }])
   account: Account;

@@ -28,7 +28,7 @@ class AuctionService {
     this.logger.info('Start all auction sniping.');
     const auctionConfigs = await auctionConfigService.getAuctionConfigs();
     const now = new Date();
-    const offset = 3;
+    const offset = -9;
     auctionConfigs.forEach(async (auctionConfig) => {
       const startTime = this.calculateStartTime(auctionConfig.startHour, now, offset);
       const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
