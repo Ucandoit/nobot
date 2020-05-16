@@ -43,6 +43,7 @@
         "tsx": "never"
       }
     ],
+    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }]
     // "import/no-unresolved": 0
   }
 }

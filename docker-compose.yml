@@ -40,5 +40,17 @@ services:
       - .:/usr/src/app
     ports:
       - '4002:3000'
+  account-manager:
+    build:
+      context: ./
+      dockerfile: ./packages/api/account-manager/Dockerfile.dev
+    volumes:
+      - /usr/src/app/node_modules
+      - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/api/account-manager/node_modules
+      - .:/usr/src/app
+    ports:
+      - '4003:3000'
 volumes:
     nobot-pgdata:

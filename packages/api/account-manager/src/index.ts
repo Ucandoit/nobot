@@ -11,7 +11,7 @@ configure({
   disableClustering: true
 });
 
-const logger = getLogger('card-index');
+const logger = getLogger('account-manager-index');
 
 redisClient.start({
   host: 'nobot-redis',
@@ -27,15 +27,19 @@ redisClient.start({
 });
 
 initConnection({
-  host: 'vps-aba0a878.vps.ovh.ca',
+  host: '51.68.190.225',
+  // host: 'vps-aba0a878.vps.ovh.ca',
   // host: 'nobot-database',
-  port: 5433,
-  // port: 5432,
-  username: 'nobot',
-  password: 'nobot',
-  database: 'nobot',
+  // port: 5433,
+  port: 5432,
+  username: 'nobunyaganoyabo',
+  // username: 'nobot',
+  password: 'nobunyaganoyabo',
+  // password: 'nobot',
+  database: 'nobunyaganoyabo',
+  // database: 'nobot',
   schema: 'public',
-  synchronize: true,
+  synchronize: false,
   logging: true
 }).then(() => {
   logger.info('init postgres.');
