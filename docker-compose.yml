@@ -25,9 +25,14 @@ services:
       - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/auction-sniping/node_modules
+      - /usr/src/app/packages/api/account-manager
+      - /usr/src/app/packages/api/card
+      - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
       - '4001:3000'
+    environment:
+      CONFIG_PROFILE: ${CONFIG_PROFILE}
   card:
     build:
       context: ./
@@ -37,9 +42,14 @@ services:
       - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/card/node_modules
+      - /usr/src/app/packages/api/auction-sniping
+      - /usr/src/app/packages/api/account-manager
+      - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
       - '4002:3000'
+    environment:
+      CONFIG_PROFILE: ${CONFIG_PROFILE}
   account-manager:
     build:
       context: ./
@@ -49,8 +59,13 @@ services:
       - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/account-manager/node_modules
+      - /usr/src/app/packages/api/auction-sniping
+      - /usr/src/app/packages/api/card
+      - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
       - '4003:3000'
+    environment:
+      CONFIG_PROFILE: ${CONFIG_PROFILE}
 volumes:
     nobot-pgdata:

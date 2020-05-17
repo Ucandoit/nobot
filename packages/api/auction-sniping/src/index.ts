@@ -1,4 +1,4 @@
-import { redisClient } from '@nobot-core/commons';
+import { loadProjectConfig, redisClient } from '@nobot-core/commons';
 import initConnection from '@nobot-core/database';
 import { configure, getLogger } from 'log4js';
 import { scheduleJob } from 'node-schedule';
@@ -15,9 +15,10 @@ configure({
 
 const logger = getLogger('auction-sniping-index');
 
+const { redis, database } = loadProjectConfig('api_auction_sniping');
+
 redisClient.start({
-  host: 'nobot-redis',
-  port: 6379,
+  ...redis,
   // eslint-disable-next-line @typescript-eslint/camelcase
   retry_strategy: (options) => {
     logger.info('Retrying.');
@@ -28,15 +29,7 @@ redisClient.start({
   }
 });
 
-initConnection({
-  host: 'nobot-database',
-  port: 5432,
-  username: 'nobot',
-  password: 'nobot',
-  database: 'nobot',
-  schema: 'public',
-  synchronize: true
-}).then(() => {
+initConnection(database).then(() => {
   logger.info('init postgres.');
   startApp();
   scheduleJob('0 0 15 * * *', auctionService.dailyReset);

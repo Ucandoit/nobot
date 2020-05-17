@@ -1,0 +1,13 @@
+config:
+  database:
+    host: nobot-database
+    port: 5432
+    username: nobot
+    password: nobot
+    database: nobot
+    schema: public
+    synchronize: true
+    logging: false
+  redis:
+    host: nobot-redis
+    port: 6379

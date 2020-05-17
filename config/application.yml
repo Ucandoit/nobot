@@ -1,0 +1,11 @@
+---
+projectName: api_auction_sniping
+<<: !config config
+
+---
+projectName: api_account_manager
+<<: !config config
+
+---
+projectName: api_card
+<<: !config config
