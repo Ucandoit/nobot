@@ -1,5 +1,4 @@
 import express from 'express';
-import cardService from './card-service';
 
 export default (): void => {
   const app = express();
@@ -8,7 +7,7 @@ export default (): void => {
     res.status(200).send('Card');
   });
 
-  cardService.scanStoredCards('xzdykerik');
+  // cardService.scanStoredCards('xzdykerik');
 
   app.listen(3000);
 };

@@ -1,4 +1,4 @@
-import { redisClient } from '@nobot-core/commons';
+import { loadProjectConfig, redisClient } from '@nobot-core/commons';
 import initConnection from '@nobot-core/database';
 import { configure, getLogger } from 'log4js';
 import startApp from './app';
@@ -13,9 +13,10 @@ configure({
 
 const logger = getLogger('card-index');
 
+const { redis, database } = loadProjectConfig('api_card');
+
 redisClient.start({
-  host: 'nobot-redis',
-  port: 6379,
+  ...redis,
   // eslint-disable-next-line @typescript-eslint/camelcase
   retry_strategy: (options) => {
     logger.info('Retrying.');
@@ -26,18 +27,7 @@ redisClient.start({
   }
 });
 
-initConnection({
-  host: 'vps-aba0a878.vps.ovh.ca',
-  // host: 'nobot-database',
-  port: 5433,
-  // port: 5432,
-  username: 'nobot',
-  password: 'nobot',
-  database: 'nobot',
-  schema: 'public',
-  synchronize: true,
-  logging: true
-}).then(() => {
+initConnection(database).then(() => {
   logger.info('init postgres.');
   startApp();
 });

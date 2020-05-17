@@ -16,6 +16,7 @@
   "dependencies": {
     "@nobot-core/database": "0.1.0",
     "cheerio": "^1.0.0-rc.3",
+    "js-yaml": "^3.13.1",
     "log4js": "^6.2.1",
     "redis": "^3.0.2",
     "superagent": "^5.2.2",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.18",
+    "@types/js-yaml": "^3.12.4",
     "@types/redis": "^2.8.18",
     "@types/superagent": "^4.1.7"
   }

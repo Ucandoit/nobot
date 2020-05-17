@@ -1,5 +1,4 @@
 node_modules
-yarn.lock
 .DS_Store
 lib
 *.log
@@ -8,3 +7,5 @@ build
 dist
 *.tsbuildinfo
 .vscode
+config-int.yml
+config-prod.yml
