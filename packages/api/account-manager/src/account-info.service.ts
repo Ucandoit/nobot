@@ -5,7 +5,7 @@ class AccountInfoService {
   private logger = getLogger(AccountInfoService.name);
 
   getReserveCards = async (login: string): Promise<CardInfo[]> => {
-    // this.logger.info('Get reserve cards for %s.', login);
+    this.logger.info('Get reserve cards for %s.', login);
     const token = await tokenManager.getToken(login);
     const page = (await makeRequest(NOBOT_URL.VILLAGE, 'GET', token)) as CheerioStatic;
     const cards = page('.reserve-rect');

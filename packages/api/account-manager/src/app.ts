@@ -11,9 +11,9 @@ export default async (): Promise<void> => {
     res.status(200).send();
   });
 
-  app.get('account/info', async (req, res) => {
+  app.get('/account/info', async (req, res) => {
     const { login } = req.query;
-    res.status(200).send(accountInfoService.getReserveCards(login as string));
+    res.status(200).send(await accountInfoService.getReserveCards(login as string));
   });
 
   app.listen(3000);
