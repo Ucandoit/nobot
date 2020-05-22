@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "scripts": {
-    "lint": "yarn prettier && eslint 'packages/**/*.ts'",
+    "lint": "eslint 'packages/**/*.ts'",
     "prettier": "prettier --write 'packages/**/*.ts'",
     "start:dev": "CONFIG_PROFILE=DEV docker-compose up --no-deps",
     "start:int": "CONFIG_PROFILE=INT docker-compose up --no-deps",
@@ -36,6 +36,7 @@
   ],
   "lint-staged": {
     "*.{ts,tsx}": [
+      "yarn prettier",
       "yarn lint",
       "git add"
     ]
