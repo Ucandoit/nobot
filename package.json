@@ -35,7 +35,7 @@
     "packages/tools/*"
   ],
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "*.ts": [
       "yarn prettier",
       "yarn lint",
       "git add"
