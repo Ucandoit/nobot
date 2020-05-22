@@ -31,7 +31,7 @@ class AccountInfoService {
         .get();
     }
     return [];
-  }
+  };
 }
 
 export default new AccountInfoService();
