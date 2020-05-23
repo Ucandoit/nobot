@@ -6,7 +6,7 @@
     "prettier": "prettier --write 'packages/**/*.ts'",
     "start:dev": "CONFIG_PROFILE=DEV docker-compose up --no-deps",
     "start:int": "CONFIG_PROFILE=INT docker-compose up --no-deps",
-    "start:prod": "CONFIG_PROFILE=PROD docker-compose up --no-deps",
+    "start:preprod": "CONFIG_PROFILE=PREPROD docker-compose up --no-deps",
     "test": "jest --runInBand"
   },
   "devDependencies": {
