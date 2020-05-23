@@ -1,7 +1,7 @@
 interface CardInfo {
   id: string;
   name: string;
-  tradable: boolean;
+  untradable: boolean;
   inAction: boolean;
   trading: boolean;
   protect: boolean;

@@ -16,14 +16,15 @@ class AccountInfoService {
             const card = cards.eq(index);
             const face = card.find('.card-face');
             const faceClass = face.attr('class');
+            const faceClasses = faceClass?.split(' ');
             const id = regexUtils.catchByRegex(faceClass, /(?<=face-card-id)[0-9]+/);
             return {
               id: id || '',
               name: face.attr('title') || '',
-              tradable: !faceClass?.includes('trade-limit'),
-              protect: !!faceClass?.includes('protected'),
-              inAction: !!faceClass?.includes('action'),
-              trading: !!faceClass?.includes('trade'),
+              untradable: !!faceClasses?.includes('trade-limit'),
+              protect: !!faceClasses?.includes('protected'),
+              inAction: !!faceClasses?.includes('action'),
+              trading: !!faceClasses?.includes('trade'),
               faceUrl: face.attr('src') || ''
             };
           }
