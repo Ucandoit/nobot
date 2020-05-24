@@ -14,5 +14,12 @@ export default async (): Promise<void> => {
     res.status(200).send();
   });
 
+  app.post('/cards/:cardId/sell', async (req, res) => {
+    const { cardId } = req.params;
+    const { login, sellPrice } = req.query;
+    await cardService.sell(login as string, cardId, parseInt(sellPrice as string, 10));
+    res.status(200).send();
+  });
+
   app.listen(3000);
 };
