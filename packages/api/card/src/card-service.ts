@@ -2,6 +2,7 @@ import { makeRequest, NOBOT_URL, regexUtils, tokenManager } from '@nobot-core/co
 import { StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { getConnection } from 'typeorm';
+import { getProperty, getRarity, getStar } from './card-utils';
 
 class CardService {
   private logger = getLogger(CardService.name);
@@ -33,6 +34,32 @@ class CardService {
         }
       });
     }
+  };
+
+  getCardDetail = async (cardId: string, login: string): Promise<any> => {
+    const token = await tokenManager.getToken(login);
+    const page = (await makeRequest(NOBOT_URL.CARD_DETAIL, 'POST', token, `cardid=${cardId}`)) as CheerioStatic;
+    return {
+      id: cardId,
+      name: page('.card-name').text(),
+      realName: page('.card-real-name').text(),
+      property: getProperty(page('.card-property').attr('src')),
+      rarity: getRarity(page('.card-rarity').attr('src')),
+      star: getStar(page('.card-rarity').attr('src')),
+      deed: page('.card-deed').text(),
+      refineTotal:
+        page('.card-refine-total').length > 0
+          ? page('.card-refine-total').text()
+          : page('.card-refine-total-left').text(),
+      refineAtk: page('.card-refine-atk').text(),
+      refineDef: page('.card-refine-def').text(),
+      refineSpd: page('.card-refine-spd').text(),
+      refineVir: page('.card-refine-vir').text(),
+      refineStg: page('.card-refine-stg').text(),
+      skill1: `${page('.card-skill1').text()}${page('.card-skill-lv1').text()}`,
+      skill2: `${page('.card-skill2').text()}${page('.card-skill-lv2').text()}`,
+      skill3: `${page('.card-skill3').text()}${page('.card-skill-lv3').text()}`
+    };
   };
 
   tradeNp = async (source: string, target: string): Promise<void> => {
