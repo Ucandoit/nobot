@@ -1,8 +1,20 @@
 import { makeRequest, NOBOT_URL, tokenManager } from '@nobot-core/commons';
+import { Account } from '@nobot-core/database';
 import { getLogger } from 'log4js';
+import { getConnection } from 'typeorm';
 
 class AccountService {
   private logger = getLogger(AccountService.name);
+
+  getAll = (): Promise<Account[]> => {
+    return getConnection()
+      .getRepository<Account>('Account')
+      .find({
+        order: {
+          login: 'ASC'
+        }
+      });
+  };
 
   refineQuest = async (login: string): Promise<void> => {
     this.logger.info('Start refine quest for %s', login);

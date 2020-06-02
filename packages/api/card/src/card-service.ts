@@ -1,7 +1,8 @@
-import { makeRequest, NOBOT_URL, tokenManager } from '@nobot-core/commons';
+import { makeRequest, NOBOT_URL, regexUtils, tokenManager } from '@nobot-core/commons';
 import { StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { getConnection } from 'typeorm';
+import { getProperty, getRarity, getStar } from './card-utils';
 
 class CardService {
   private logger = getLogger(CardService.name);
@@ -35,6 +36,32 @@ class CardService {
     }
   };
 
+  getCardDetail = async (cardId: string, login: string): Promise<any> => {
+    const token = await tokenManager.getToken(login);
+    const page = (await makeRequest(NOBOT_URL.CARD_DETAIL, 'POST', token, `cardid=${cardId}`)) as CheerioStatic;
+    return {
+      id: cardId,
+      name: page('.card-name').text(),
+      realName: page('.card-real-name').text(),
+      property: getProperty(page('.card-property').attr('src')),
+      rarity: getRarity(page('.card-rarity').attr('src')),
+      star: getStar(page('.card-rarity').attr('src')),
+      deed: page('.card-deed').text(),
+      refineTotal:
+        page('.card-refine-total').length > 0
+          ? page('.card-refine-total').text()
+          : page('.card-refine-total-left').text(),
+      refineAtk: page('.card-refine-atk').text(),
+      refineDef: page('.card-refine-def').text(),
+      refineSpd: page('.card-refine-spd').text(),
+      refineVir: page('.card-refine-vir').text(),
+      refineStg: page('.card-refine-stg').text(),
+      skill1: `${page('.card-skill1').text()}${page('.card-skill-lv1').text()}`,
+      skill2: `${page('.card-skill2').text()}${page('.card-skill-lv2').text()}`,
+      skill3: `${page('.card-skill3').text()}${page('.card-skill-lv3').text()}`
+    };
+  };
+
   tradeNp = async (source: string, target: string): Promise<void> => {
     this.logger.info('trade np from %s to %s.', source, target);
     const np = await this.getNp(source);
@@ -45,8 +72,8 @@ class CardService {
       token
     )) as CheerioStatic;
     const card = page('.card');
-    const cardId = this.catchByRegex(card.attr('class'), /(?<=card card-id)[0-9]+$/g);
-    const fileId = this.catchByRegex(card.parent().find('.sell-button').attr('class'), /(?<=file-id)[0-9]+(?= )/);
+    const cardId = regexUtils.catchByRegex(card.attr('class'), /(?<=card card-id)[0-9]+$/g);
+    const fileId = regexUtils.catchByRegex(card.parent().find('.sell-button').attr('class'), /(?<=file-id)[0-9]+(?= )/);
     const postData = `mode=1&card-id=${cardId}&trade-id=&limit_rank=1&storage-card=${cardId}&fileid=${fileId}&form_name=form&point=${np}&term=1&handle=1`;
     await makeRequest(NOBOT_URL.TRADE_SELL, 'POST', token, postData);
     this.logger.info('card posted for %d.', np);
@@ -56,7 +83,7 @@ class CardService {
     for (let i = 0; i < sellList.length; i++) {
       const sellCard = sellList.eq(i);
       if (sellCard.children().eq(2).children().eq(0).text() === np.toString()) {
-        tradeId = this.catchByRegex(sellCard.attr('class'), /(?<=trade-sell-id)[0-9]+(?= )/);
+        tradeId = regexUtils.catchByRegex(sellCard.attr('class'), /(?<=trade-sell-id)[0-9]+(?= )/);
       }
     }
     if (tradeId) {
@@ -65,27 +92,26 @@ class CardService {
     }
   };
 
-  getNp = async (login: string): Promise<number> => {
+  sell = async (login: string, cardId: string, sellPrice: number): Promise<void> => {
+    const token = await tokenManager.getToken(login);
+    const postData = `mode=1&card-id=${cardId}&trade-id=&form_name=form&point=${sellPrice}&term=3&handle=1`;
+    await makeRequest(NOBOT_URL.TRADE_SELL, 'POST', token, postData);
+    this.logger.info('card %s posted for %d by %s.', cardId, sellPrice, login);
+  };
+
+  private getNp = async (login: string): Promise<number> => {
     const token = await tokenManager.getToken(login);
     const page = (await makeRequest(NOBOT_URL.VILLAGE, 'GET', token)) as CheerioStatic;
     return parseInt(page('#lottery_point').text(), 10);
   };
 
-  buyCard = async (login: string, tradeId: string): Promise<void> => {
+  private buyCard = async (login: string, tradeId: string): Promise<void> => {
     const token = await tokenManager.getToken(login);
     const searchUrl = (await makeRequest(NOBOT_URL.TRADE_BUY, 'GET', token)) as string;
     const page = (await makeRequest(searchUrl, 'GET', token)) as CheerioStatic;
     const buyForm = page('#form');
     const requestParams = buyForm.serialize().replace(/(?<=&trade-id=)[0-9]+(?=&)/, tradeId);
     await makeRequest(NOBOT_URL.TRADE_BUY, 'POST', token, requestParams);
-  };
-
-  catchByRegex = (str = '', regex: RegExp): string | null => {
-    const matcher = str.match(regex);
-    if (matcher) {
-      return matcher[0];
-    }
-    return null;
   };
 }
 

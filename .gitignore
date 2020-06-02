@@ -8,4 +8,4 @@ dist
 *.tsbuildinfo
 .vscode
 config-int.yml
-config-prod.yml
+config-preprod.yml

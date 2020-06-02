@@ -2,11 +2,11 @@
   "name": "root",
   "private": true,
   "scripts": {
-    "lint": "yarn prettier && eslint 'packages/**/*.ts'",
+    "lint": "eslint 'packages/**/*.ts'",
     "prettier": "prettier --write 'packages/**/*.ts'",
     "start:dev": "CONFIG_PROFILE=DEV docker-compose up --no-deps",
     "start:int": "CONFIG_PROFILE=INT docker-compose up --no-deps",
-    "start:prod": "CONFIG_PROFILE=PROD docker-compose up --no-deps",
+    "start:preprod": "CONFIG_PROFILE=PREPROD docker-compose up --no-deps",
     "test": "jest --runInBand"
   },
   "devDependencies": {
@@ -35,7 +35,8 @@
     "packages/tools/*"
   ],
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "*.ts": [
+      "yarn prettier",
       "yarn lint",
       "git add"
     ]
