@@ -1,39 +1,70 @@
 import { makeRequest, NOBOT_URL, regexUtils, tokenManager } from '@nobot-core/commons';
-import { StoreCard } from '@nobot-core/database';
+import { Account, StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
-import { getConnection } from 'typeorm';
+import { getConnection, MoreThan } from 'typeorm';
 import { getProperty, getRarity, getStar } from './card-utils';
 
 class CardService {
   private logger = getLogger(CardService.name);
 
+  scanAllStoredCards = async (): Promise<void> => {
+    const accounts = await getConnection()
+      .getRepository<Account>('Account')
+      .find({
+        where: {
+          expirationDate: MoreThan(new Date())
+        },
+        order: {
+          login: 'ASC'
+        }
+      });
+    await accounts.reduce(async (previous: Promise<void>, account: Account): Promise<void> => {
+      await previous;
+      return this.scanStoredCards(account.login);
+    }, Promise.resolve());
+  };
+
   scanStoredCards = async (login: string): Promise<void> => {
     const token = await tokenManager.getToken(login);
-    const pages = 1;
-    const currentPage = (await makeRequest(
-      `${NOBOT_URL.MANAGE_STORED_CARDS}&pages=${pages}`,
-      'GET',
-      token
-    )) as CheerioStatic;
-    const cardElements = currentPage('.card');
+    let nextPage = 1;
+    while (nextPage > 0) {
+      this.logger.info('Scan page %d for %s.', nextPage, login);
+      // eslint-disable-next-line no-await-in-loop
+      nextPage = await this.scanPage(login, token, nextPage);
+    }
+  };
+
+  scanPage = async (login: string, token: string, pages: number): Promise<number> => {
+    const page = (await makeRequest(`${NOBOT_URL.MANAGE_STORED_CARDS}&pages=${pages}`, 'GET', token)) as CheerioStatic;
+    const cardElements = page('.card');
     if (cardElements.length > 0) {
       cardElements.each(async (index) => {
         const cardElement = cardElements.eq(index);
-        const idMatch = cardElement.attr('class')?.match(/(?<=card card-id)[0-9]+$/g);
-        if (idMatch) {
-          const cardId = parseInt(idMatch[0], 10);
-          // const card = await getConnection().getRepository<Card>('Card').find({ id: cardId });
-          this.logger.info(cardId);
+        const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+$/);
+        if (id) {
+          const cardId = parseInt(id, 10);
+          const count = parseInt(cardElement.parent().prev().find('span').last().text(), 10);
           const repository = getConnection().getRepository<StoreCard>('StoreCard');
           const storeCard = await repository.findOne({ login, id: cardId });
           if (storeCard) {
-            this.logger.info(storeCard);
+            storeCard.count = count;
+            await repository.save(storeCard);
           } else {
-            await repository.save({ login, id: cardId, count: 1 });
+            await repository.save({ login, id: cardId, count });
           }
         }
       });
     }
+    // check if there is a next page
+    let nextPage = -1;
+    const currentPages = page('.current-page');
+    currentPages.each((index) => {
+      const nextElement = currentPages.eq(index).next();
+      if (nextElement && nextElement.hasClass('other-page')) {
+        nextPage = pages + 1;
+      }
+    });
+    return nextPage;
   };
 
   getCardDetail = async (cardId: string, login: string): Promise<any> => {
