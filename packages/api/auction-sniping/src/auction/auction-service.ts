@@ -1,4 +1,4 @@
-import { makeRequest, NOBOT_URL, redisClient, tokenManager } from '@nobot-core/commons';
+import { makeRequest, NOBOT_URL, redisClient } from '@nobot-core/commons';
 import { AuctionHistory } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Job, scheduleJob } from 'node-schedule';
@@ -46,8 +46,7 @@ class AuctionService {
 
   startSniping = async (login: string, start?: Date, end?: Date): Promise<void> => {
     if (login) {
-      const token = await tokenManager.getToken(login);
-      const searchUrl = (await makeRequest(NOBOT_URL.TRADE_BUY, 'GET', token)) as string;
+      const searchUrl = (await makeRequest(NOBOT_URL.TRADE_BUY, 'GET', login)) as string;
       if (searchUrl) {
         const rule = '*/5 * * * * *';
         const jobOptions = start && end ? { start, end, rule } : rule;
@@ -82,8 +81,7 @@ class AuctionService {
         }
         this.logger.info('Start sniping %d for %s', count, login);
         // request ah page
-        const token = await tokenManager.getToken(login);
-        const searchResultPage = (await makeRequest(searchUrl, 'GET', token)) as CheerioStatic;
+        const searchResultPage = (await makeRequest(searchUrl, 'GET', login)) as CheerioStatic;
         if (searchResultPage('#work-headers').length > 0) {
           // read html content to get card info
           const auctionCard = this.readFromPage(searchResultPage);
@@ -92,7 +90,7 @@ class AuctionService {
             if (auctionCard.currentNP >= auctionCard.price) {
               this.logger.info('Trying to buy for %s.', login);
               // request buy card
-              await makeRequest(NOBOT_URL.TRADE_BUY, 'POST', token, auctionCard.requestParams);
+              await makeRequest(NOBOT_URL.TRADE_BUY, 'POST', login, auctionCard.requestParams);
               // save in history
               await auctionHistoryService.save({
                 cardRarity: auctionCard.rarity,

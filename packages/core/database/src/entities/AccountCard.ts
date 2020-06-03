@@ -47,8 +47,23 @@ export default class AccountCard {
   @Column('integer', { name: 'refine_stg' })
   refineStg: number;
 
+  @Column('boolean', { name: 'deck_card', default: () => 'false' })
+  deckCard: boolean;
+
+  @Column('boolean', { name: 'locked', default: () => 'false' })
+  locked: boolean;
+
+  @Column('boolean', { name: 'protected', default: () => 'false' })
+  protect: boolean;
+
+  @Column('boolean', { name: 'helper', default: () => 'false' })
+  helper: boolean;
+
   @Column('boolean', { name: 'tradable', default: () => 'true' })
   tradable: boolean;
+
+  @Column('boolean', { name: 'limit_break', default: () => 'false' })
+  limitBreak: boolean;
 
   @ManyToOne(() => Account)
   @JoinColumn([{ name: 'login', referencedColumnName: 'login' }])

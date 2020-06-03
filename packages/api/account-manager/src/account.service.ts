@@ -1,4 +1,4 @@
-import { makeRequest, NOBOT_URL, tokenManager } from '@nobot-core/commons';
+import { makeRequest, NOBOT_URL } from '@nobot-core/commons';
 import { Account } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { getConnection } from 'typeorm';
@@ -18,8 +18,7 @@ class AccountService {
 
   refineQuest = async (login: string): Promise<void> => {
     this.logger.info('Start refine quest for %s', login);
-    const token = await tokenManager.getToken(login);
-    const refineCardPage = (await makeRequest(NOBOT_URL.REFINE_CARD, 'GET', token)) as CheerioStatic;
+    const refineCardPage = (await makeRequest(NOBOT_URL.REFINE_CARD, 'GET', login)) as CheerioStatic;
     const refineCardId = this.getRefineCardId(refineCardPage);
     if (refineCardId) {
       const materialCardIds = this.getMaterialCardIds(refineCardPage);
@@ -33,7 +32,7 @@ class AccountService {
           await previous;
           this.logger.info('refine %s by %s for %s', refineCardId, materialCardId, login);
           const postData = `mode_id=6&point_type=1&refine_card_id=${refineCardId}&material_card_id=${materialCardId}&skill_index=0&slot_index=0&trainer=1&catevent=0&refine_item_type_id=0&refine_item_num=0`;
-          return makeRequest(NOBOT_URL.REFINE_CARD_SUB, 'POST', token, postData);
+          return makeRequest(NOBOT_URL.REFINE_CARD_SUB, 'POST', login, postData);
         },
         initPromise
       );

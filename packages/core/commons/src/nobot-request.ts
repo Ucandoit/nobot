@@ -1,6 +1,7 @@
 import cheerio from 'cheerio';
 import { post } from 'superagent';
 import { jsonParser } from './response-parser';
+import tokenManager from './token-manager';
 
 // const logger = getLogger('NobotRequest');
 
@@ -9,9 +10,10 @@ const baseUrl = 'http://e824549fb2ec8582e96abe565514e1aa9a3fca00.app.mbga-platfo
 const makeRequest = async (
   url: string,
   method: string,
-  token: string,
+  login: string,
   postData?: string
 ): Promise<string | CheerioStatic> => {
+  const token = await tokenManager.getToken(login);
   const res = await post(baseUrl)
     .set('Content-Type', 'application/x-www-form-urlencoded')
     .send({

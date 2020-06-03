@@ -28,5 +28,7 @@ export default async (): Promise<void> => {
     res.status(200).send(card);
   });
 
+  // cardService.scanAccountCards('ucandoit');
+
   app.listen(3000);
 };
