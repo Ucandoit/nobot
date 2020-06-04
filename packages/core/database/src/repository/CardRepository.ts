@@ -3,7 +3,7 @@ import { Card } from '../entities';
 
 @EntityRepository(Card)
 export default class CardRepository extends Repository<Card> {
-  findAll = async (
+  findAll = (
     page = 0,
     size = 20,
     sort: keyof Card = 'number',

@@ -44,6 +44,7 @@ export default async (): Promise<void> => {
   });
 
   // cardService.scanAccountCards('ucandoit');
+  // cardService.getRewardCard(1652);
 
   app.listen(3000);
 };

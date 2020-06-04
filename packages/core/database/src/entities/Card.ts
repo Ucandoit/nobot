@@ -96,4 +96,10 @@ export default class Card {
     length: 255
   })
   trainSkills: string | null;
+
+  @Column('boolean', { name: 'tradable', default: () => 'true' })
+  tradable: boolean;
+
+  @Column('boolean', { name: 'display', default: () => 'true' })
+  display: boolean;
 }

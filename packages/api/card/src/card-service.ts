@@ -153,6 +153,30 @@ class CardService {
     };
   };
 
+  scanAllRewardCards = async (): Promise<void> => {
+    const cards = await getCustomRepository(CardRepository).find();
+    await cards.reduce(async (previous: Promise<void>, card: Card): Promise<void> => {
+      await previous;
+      return this.scanRewardCard(card);
+    }, Promise.resolve());
+  };
+
+  scanRewardCard = async (card: Card): Promise<void> => {
+    this.logger.info('Scan card %d', card.id);
+    const page = (await makeRequest(
+      NOBOT_URL.REWARD_CARD_DETAIL,
+      'POST',
+      'ucandoit',
+      `cardid=${card.id}`
+    )) as CheerioStatic;
+    const tradable = page('.card-trade').length === 0;
+    if (!tradable) {
+      // eslint-disable-next-line no-param-reassign
+      card.tradable = tradable;
+      await getCustomRepository(CardRepository).save(card);
+    }
+  };
+
   tradeNp = async (source: string, target: string): Promise<void> => {
     this.logger.info('trade np from %s to %s.', source, target);
     const np = await this.getNp(source);
