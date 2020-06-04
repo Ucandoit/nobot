@@ -1,3 +1,4 @@
+import { Card } from '@nobot-core/database';
 import express from 'express';
 import cardService from './card-service';
 
@@ -26,6 +27,20 @@ export default async (): Promise<void> => {
     const { login } = req.query;
     const card = await cardService.getCardDetail(cardId, login as string);
     res.status(200).send(card);
+  });
+
+  app.get('/cards', async (req, res) => {
+    const { page, size, sort, order } = req.query;
+    res
+      .status(200)
+      .send(
+        await cardService.getAll(
+          parseInt(page as string, 10),
+          parseInt(size as string, 10),
+          sort as keyof Card,
+          order as 'ASC' | 'DESC'
+        )
+      );
   });
 
   // cardService.scanAccountCards('ucandoit');

@@ -25,4 +25,5 @@ const initConnection = async (options: PostgresConnectionOptions): Promise<Conne
 };
 
 export * from './entities';
+export * from './repository';
 export default initConnection;

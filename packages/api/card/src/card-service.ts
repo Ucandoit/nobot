@@ -1,11 +1,20 @@
 import { makeRequest, NOBOT_URL, regexUtils } from '@nobot-core/commons';
-import { Account, AccountCard, StoreCard } from '@nobot-core/database';
+import { Account, AccountCard, Card, CardRepository, StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
-import { getConnection, MoreThan } from 'typeorm';
+import { getConnection, getCustomRepository, MoreThan } from 'typeorm';
 import { getProperty, getRarity, getStar } from './card-utils';
 
 class CardService {
   private logger = getLogger(CardService.name);
+
+  getAll = async (
+    page = 0,
+    size = 20,
+    sort: keyof Card = 'number',
+    order: 'ASC' | 'DESC' = 'ASC'
+  ): Promise<[Card[], number]> => {
+    return getCustomRepository(CardRepository).findAll(page, size, sort, order);
+  };
 
   scanAllStoredCards = async (): Promise<void> => {
     const accounts = await getConnection()
