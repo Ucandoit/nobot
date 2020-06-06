@@ -11,9 +11,10 @@ class CardService {
     page = 0,
     size = 20,
     sort: keyof Card = 'number',
-    order: 'ASC' | 'DESC' = 'ASC'
+    order: 'ASC' | 'DESC' = 'ASC',
+    filters: Record<keyof Card, string>
   ): Promise<[Card[], number]> => {
-    return getCustomRepository(CardRepository).findAll(page, size, sort, order);
+    return getCustomRepository(CardRepository).findAll(page, size, sort, order, filters);
   };
 
   scanAllStoredCards = async (): Promise<void> => {

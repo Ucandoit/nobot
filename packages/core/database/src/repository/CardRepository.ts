@@ -8,14 +8,21 @@ export default class CardRepository extends Repository<Card> {
     size = 20,
     sort: keyof Card = 'number',
     order: 'ASC' | 'DESC' = 'ASC',
-    query?: any
+    filters?: Record<keyof Card, string>
   ): Promise<[Card[], number]> => {
-    return this.findAndCount({
-      take: size,
-      skip: page * size,
-      order: {
-        [sort]: order
-      }
-    });
+    const query = this.createQueryBuilder('card')
+      .take(size)
+      .skip(page * size)
+      .orderBy({
+        [`card.${sort}`]: {
+          order,
+          nulls: order === 'ASC' ? 'NULLS FIRST' : 'NULLS LAST'
+        }
+      })
+      .where({
+        display: true,
+        ...filters
+      });
+    return query.getManyAndCount();
   };
 }

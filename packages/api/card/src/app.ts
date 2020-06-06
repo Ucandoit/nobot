@@ -30,7 +30,7 @@ export default async (): Promise<void> => {
   });
 
   app.get('/cards', async (req, res) => {
-    const { page, size, sort, order } = req.query;
+    const { page, size, sort, order, filters } = req.query;
     res
       .status(200)
       .send(
@@ -38,7 +38,8 @@ export default async (): Promise<void> => {
           parseInt(page as string, 10),
           parseInt(size as string, 10),
           sort as keyof Card,
-          order as 'ASC' | 'DESC'
+          order as 'ASC' | 'DESC',
+          JSON.parse(filters as string)
         )
       );
   });
