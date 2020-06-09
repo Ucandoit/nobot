@@ -16,7 +16,7 @@ class AccountInfoService {
             const face = card.find('.card-face');
             const faceClass = face.attr('class');
             const faceClasses = faceClass?.split(' ');
-            const id = regexUtils.catchByRegex(faceClass, /(?<=face-card-id)[0-9]+/);
+            const id = regexUtils.catchByRegex(faceClass, /(?<=face-card-id)[0-9]+/) as string | null;
             return {
               id: id || '',
               name: face.attr('title') || '',

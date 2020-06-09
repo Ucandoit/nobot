@@ -41,9 +41,6 @@ export const getRarity = (img: string | undefined): string => {
 };
 
 export const getStar = (img: string | undefined): number => {
-  const starCode = regexUtils.catchByRegex(img, /(?<=star0)[0-9](?=_)/);
-  if (starCode) {
-    return parseInt(starCode, 10);
-  }
-  return 0;
+  const starCode = regexUtils.catchByRegex(img, /(?<=star0)[0-9](?=_)/, 'integer') as number | null;
+  return starCode || 0;
 };

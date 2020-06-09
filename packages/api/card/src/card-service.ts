@@ -50,7 +50,7 @@ class CardService {
   scanAccountCards = async (login: string): Promise<void> => {
     try {
       let nextPage = 1;
-      const cardIds: string[] = [];
+      const cardIds: number[] = [];
       while (nextPage > 0) {
         this.logger.info(`Scan page %d of %s's reserve cards.`, nextPage, login);
         // eslint-disable-next-line no-await-in-loop
@@ -70,17 +70,18 @@ class CardService {
     if (cardElements.length > 0) {
       cardElements.each(async (index) => {
         const cardElement = cardElements.eq(index);
-        const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+$/);
+        const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+$/, 'integer') as
+          | number
+          | null;
         if (id) {
-          const cardId = parseInt(id, 10);
           const count = parseInt(cardElement.parent().prev().find('span').last().text(), 10);
           const repository = getConnection().getRepository<StoreCard>('StoreCard');
-          const storeCard = await repository.findOne({ login, id: cardId });
+          const storeCard = await repository.findOne({ login, id });
           if (storeCard) {
             storeCard.count = count;
             await repository.save(storeCard);
           } else {
-            await repository.save({ login, id: cardId, count });
+            await repository.save({ login, id, count });
           }
         }
       });
@@ -97,22 +98,26 @@ class CardService {
     return nextPage;
   };
 
-  private scanAccountPage = async (login: string, url: string, pages: number, cardIds: string[]): Promise<number> => {
+  private scanAccountPage = async (login: string, url: string, pages: number, cardIds: number[]): Promise<number> => {
     const page = (await makeRequest(`${url}&pages=${pages}`, 'GET', login)) as CheerioStatic;
     const cardElements = page('.card');
     if (cardElements.length > 0) {
       cardElements.each(async (index) => {
         const cardElement = cardElements.eq(index);
-        const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+/);
+        const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+/, 'integer') as
+          | number
+          | null;
         if (id) {
           cardIds.push(id);
-          const cardId = parseInt(id, 10);
           const repository = getConnection().getRepository<AccountCard>('AccountCard');
-          const accountCard = await repository.findOne({ id: cardId });
+          const accountCard = await repository.findOne({ id });
           if (accountCard) {
             // update
           } else {
             // create
+            repository.save({
+              id
+            });
           }
         }
       });
@@ -198,7 +203,7 @@ class CardService {
     for (let i = 0; i < sellList.length; i++) {
       const sellCard = sellList.eq(i);
       if (sellCard.children().eq(2).children().eq(0).text() === np.toString()) {
-        tradeId = regexUtils.catchByRegex(sellCard.attr('class'), /(?<=trade-sell-id)[0-9]+(?= )/);
+        tradeId = regexUtils.catchByRegex(sellCard.attr('class'), /(?<=trade-sell-id)[0-9]+(?= )/) as string | null;
       }
     }
     if (tradeId) {
