@@ -44,3 +44,15 @@ export const getStar = (img: string | undefined): number => {
   const starCode = regexUtils.catchByRegex(img, /(?<=star0)[0-9](?=_)/, 'integer') as number | null;
   return starCode || 0;
 };
+
+const imageToNumber = (image: string, prePattern: string): number => {
+  return (regexUtils.catchByRegex(image, new RegExp(`(?<=${prePattern})[0-9](?=_)`), 'integer') as number) || 0;
+};
+
+export const imagesToNumber = (images: string[]): number => {
+  let total = 0;
+  for (let i = images.length - 1; i >= 0; i--) {
+    total += imageToNumber(images[i], 'num_param_') * 10 ** (images.length - i - 1);
+  }
+  return total;
+};

@@ -1,8 +1,8 @@
 import { makeRequest, NOBOT_URL, regexUtils } from '@nobot-core/commons';
 import { Account, AccountCard, Card, CardRepository, StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
-import { getConnection, getCustomRepository, MoreThan } from 'typeorm';
-import { getProperty, getRarity, getStar } from './card-utils';
+import { getConnection, getCustomRepository, getRepository, In, MoreThan, Not } from 'typeorm';
+import { getProperty, getRarity, getStar, imagesToNumber } from './card-utils';
 
 class CardService {
   private logger = getLogger(CardService.name);
@@ -47,6 +47,31 @@ class CardService {
     }
   };
 
+  scanAllAccountCards = async (): Promise<void> => {
+    const accounts = await getConnection()
+      .getRepository<Account>('Account')
+      .find({
+        where: {
+          expirationDate: MoreThan(new Date())
+        },
+        order: {
+          login: 'ASC'
+        }
+      });
+    accounts
+      .reduce((acc: Account[][], account: Account, index: number) => {
+        if (index % 5 === 0) {
+          acc.push([]);
+        }
+        acc[acc.length - 1].push(account);
+        return acc;
+      }, [])
+      .reduce(async (previous: Promise<void[]>, group: Account[]): Promise<void[]> => {
+        await previous;
+        return Promise.all(group.map((account) => this.scanAccountCards(account.login)));
+      }, Promise.resolve([]));
+  };
+
   scanAccountCards = async (login: string): Promise<void> => {
     try {
       let nextPage = 1;
@@ -59,6 +84,7 @@ class CardService {
       this.logger.info(`Scan %s's deck cards.`, login);
       await this.scanAccountPage(login, NOBOT_URL.MANAGE_DECK_CARDS, 1, cardIds);
       // delete
+      getRepository<AccountCard>('AccountCard').delete({ account: { login }, id: Not(In(cardIds)) });
     } catch (err) {
       this.logger.error(err);
     }
@@ -102,25 +128,12 @@ class CardService {
     const page = (await makeRequest(`${url}&pages=${pages}`, 'GET', login)) as CheerioStatic;
     const cardElements = page('.card');
     if (cardElements.length > 0) {
+      const promises: Promise<void>[] = [];
       cardElements.each(async (index) => {
         const cardElement = cardElements.eq(index);
-        const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+/, 'integer') as
-          | number
-          | null;
-        if (id) {
-          cardIds.push(id);
-          const repository = getConnection().getRepository<AccountCard>('AccountCard');
-          const accountCard = await repository.findOne({ id });
-          if (accountCard) {
-            // update
-          } else {
-            // create
-            repository.save({
-              id
-            });
-          }
-        }
+        promises.push(this.scanAccountCard(cardElement, login, url, cardIds));
       });
+      await Promise.all(promises);
     }
     // check if there is a next page
     let nextPage = -1;
@@ -132,6 +145,47 @@ class CardService {
       }
     });
     return nextPage;
+  };
+
+  private scanAccountCard = async (
+    cardElement: Cheerio,
+    login: string,
+    url: string,
+    cardIds: number[]
+  ): Promise<void> => {
+    const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+/, 'integer') as
+      | number
+      | null;
+    if (id) {
+      cardIds.push(id);
+      const repository = getConnection().getRepository<AccountCard>('AccountCard');
+      const accountCard = await repository.findOne(id, { select: ['id', 'card'], relations: ['card'] });
+      if (accountCard) {
+        // update
+        this.logger.info('Update account card %s for %s.', accountCard.card.name, login);
+        repository.update({ id: accountCard.id }, this.htmlToAccountCard(cardElement));
+      } else {
+        // create
+        const tradable =
+          cardElement.find('.card-trade').length === 0 ||
+          !cardElement.find('.card-trade').attr('src')?.includes('mark_unrecommend_01');
+        const number = parseInt(cardElement.parent().prev().find('span').last().text().replace('No.', ''), 10);
+        const card = await getRepository<Card>('Card').findOne({ number, tradable });
+        if (card) {
+          const newCard = {
+            ...this.htmlToAccountCard(cardElement),
+            id,
+            deckCard: url === NOBOT_URL.MANAGE_DECK_CARDS,
+            account: { login },
+            card: { id: card?.id }
+          };
+          this.logger.info('Create account card for %s.', login);
+          repository.save(newCard);
+        } else {
+          this.logger.error('Card %d not found.', number);
+        }
+      }
+    }
   };
 
   getCardDetail = async (cardId: string, login: string): Promise<any> => {
@@ -181,6 +235,61 @@ class CardService {
       card.tradable = tradable;
       await getCustomRepository(CardRepository).save(card);
     }
+  };
+
+  htmlToAccountCard = (cardElement: Cheerio): Partial<AccountCard> => {
+    let refineTotalText = '';
+    if (cardElement.find('.card-refine-total').length > 0) {
+      refineTotalText = cardElement.find('.card-refine-total b').text();
+    } else {
+      refineTotalText = cardElement.find('.card-refine-total-left b').text();
+    }
+    const [current, max] = refineTotalText.split('/');
+    return {
+      deed: parseInt(cardElement.find('.card-deed b').text(), 10),
+      refineCurrent: parseInt(current.replace('Lv', ''), 10),
+      refineMax: parseInt(max, 10),
+      refineLvlAtk: parseInt(cardElement.find('.card-refine-atk').text().replace('Lv', ''), 10),
+      refineLvlDef: parseInt(cardElement.find('.card-refine-def').text().replace('Lv', ''), 10),
+      refineLvlSpd: parseInt(cardElement.find('.card-refine-spd').text().replace('Lv', ''), 10),
+      refineLvlVir: parseInt(cardElement.find('.card-refine-vir').text().replace('Lv', ''), 10),
+      refineLvlStg: parseInt(cardElement.find('.card-refine-stg').text().replace('Lv', ''), 10),
+      refineAtk: imagesToNumber(
+        (cardElement
+          .find('.card-ability-atk img')
+          .map((i, img) => img.attribs.src)
+          .toArray() as unknown) as string[]
+      ),
+      refineDef: imagesToNumber(
+        (cardElement
+          .find('.card-ability-def img')
+          .map((i, img) => img.attribs.src)
+          .toArray() as unknown) as string[]
+      ),
+      refineSpd: imagesToNumber(
+        (cardElement
+          .find('.card-ability-spd img')
+          .map((i, img) => img.attribs.src)
+          .toArray() as unknown) as string[]
+      ),
+      refineVir: imagesToNumber(
+        (cardElement
+          .find('.card-ability-vir img')
+          .map((i, img) => img.attribs.src)
+          .toArray() as unknown) as string[]
+      ),
+      refineStg: imagesToNumber(
+        (cardElement
+          .find('.card-ability-stg img')
+          .map((i, img) => img.attribs.src)
+          .toArray() as unknown) as string[]
+      ),
+      locked: false,
+      protect: cardElement.parent().prev().find('img[class^=mark]').css('display') !== 'none',
+      helper: cardElement.parent().prev().find('img[class^=helper]').css('display') !== 'none',
+      tradable: cardElement.find('.card-trade').length === 0,
+      limitBreak: cardElement.find('.card-limit-break-level').length > 0
+    };
   };
 
   tradeNp = async (source: string, target: string): Promise<void> => {

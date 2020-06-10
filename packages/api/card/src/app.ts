@@ -44,8 +44,10 @@ export default async (): Promise<void> => {
       );
   });
 
-  // cardService.scanAccountCards('ucandoit');
-  // cardService.getRewardCard(1652);
+  app.get('/cards/scan/account', (req, res) => {
+    cardService.scanAllAccountCards();
+    res.status(200).send();
+  });
 
   app.listen(3000);
 };
