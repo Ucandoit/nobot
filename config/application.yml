@@ -9,3 +9,7 @@ projectName: api_account_manager
 ---
 projectName: api_card
 <<: !config config
+
+---
+  projectName: api_auction
+  <<: !config config

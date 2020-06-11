@@ -7,9 +7,9 @@ export default class SellState {
   @PrimaryGeneratedColumn({ type: 'integer', name: 'id' })
   id: number;
 
-  @OneToOne(() => AccountCard)
+  @OneToOne(() => AccountCard, { nullable: true })
   @JoinColumn([{ name: 'card_id', referencedColumnName: 'id' }])
-  accountCard: AccountCard;
+  accountCard: AccountCard | null;
 
   @Column('character varying', { name: 'status', length: 32 })
   status: string;

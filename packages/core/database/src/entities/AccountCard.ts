@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, RelationId } from 'typeorm';
 import Account from './Account';
 import Card from './Card';
 
@@ -72,4 +72,10 @@ export default class AccountCard {
   @ManyToOne(() => Card)
   @JoinColumn([{ name: 'card_id', referencedColumnName: 'id' }])
   card: Card;
+
+  @RelationId((accountCard: AccountCard) => accountCard.card)
+  cardId: number;
+
+  @RelationId((accountCard: AccountCard) => accountCard.account)
+  login: string;
 }

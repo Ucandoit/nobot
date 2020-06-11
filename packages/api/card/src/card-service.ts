@@ -1,5 +1,5 @@
 import { makeRequest, NOBOT_URL, regexUtils } from '@nobot-core/commons';
-import { Account, AccountCard, Card, CardRepository, SellState, StoreCard } from '@nobot-core/database';
+import { Account, AccountCard, Card, CardRepository, SellStateRepository, StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { getConnection, getCustomRepository, getRepository, In, MoreThan, Not } from 'typeorm';
 import { getProperty, getRarity, getStar, imagesToNumber } from './card-utils';
@@ -58,18 +58,22 @@ class CardService {
           login: 'ASC'
         }
       });
-    accounts
-      .reduce((acc: Account[][], account: Account, index: number) => {
-        if (index % 5 === 0) {
-          acc.push([]);
-        }
-        acc[acc.length - 1].push(account);
-        return acc;
-      }, [])
-      .reduce(async (previous: Promise<void[]>, group: Account[]): Promise<void[]> => {
-        await previous;
-        return Promise.all(group.map((account) => this.scanAccountCards(account.login)));
-      }, Promise.resolve([]));
+    await accounts.reduce(async (previous: Promise<void>, account: Account): Promise<void> => {
+      await previous;
+      return this.scanAccountCards(account.login);
+    }, Promise.resolve());
+    // accounts
+    //   .reduce((acc: Account[][], account: Account, index: number) => {
+    //     if (index % 5 === 0) {
+    //       acc.push([]);
+    //     }
+    //     acc[acc.length - 1].push(account);
+    //     return acc;
+    //   }, [])
+    //   .reduce(async (previous: Promise<void[]>, group: Account[]): Promise<void[]> => {
+    //     await previous;
+    //     return Promise.all(group.map((account) => this.scanAccountCards(account.login)));
+    //   }, Promise.resolve([]));
   };
 
   scanAccountCards = async (login: string): Promise<void> => {
@@ -83,8 +87,28 @@ class CardService {
       }
       this.logger.info(`Scan %s's deck cards.`, login);
       await this.scanAccountPage(login, NOBOT_URL.MANAGE_DECK_CARDS, 1, cardIds);
-      // delete
-      getRepository<AccountCard>('AccountCard').delete({ account: { login }, id: Not(In(cardIds)) });
+      // card does not exist anymore, need to update in sell state if it was selling before
+      const cardsToDelete = await getRepository<AccountCard>('AccountCard').find({
+        where: { account: { login }, id: Not(In(cardIds)) }
+      });
+      cardsToDelete.forEach(async (cardToDelete) => {
+        const sellStateRepository = getCustomRepository(SellStateRepository);
+        const sellState = await sellStateRepository.findOne(
+          { accountCard: { id: cardToDelete.id } },
+          { relations: ['accountCard'] }
+        );
+        if (sellState) {
+          this.logger.info('Archive sell state for %d', sellState.accountCard?.id);
+          await sellStateRepository.update(sellState.id, {
+            status: 'SOLD',
+            sellDate: new Date(),
+            archivedData: sellState.accountCard,
+            accountCard: null
+          });
+        }
+        this.logger.info('Delete account card %d of %s', cardToDelete.id, login);
+        await getRepository<AccountCard>('AccountCard').delete(cardToDelete.id);
+      });
     } catch (err) {
       this.logger.error(err);
     }
@@ -318,34 +342,6 @@ class CardService {
     if (tradeId) {
       await this.buyCard(source, tradeId);
       this.logger.info('card bought.');
-    }
-  };
-
-  sell = async (login: string, cardId: number, sellPrice: number): Promise<void> => {
-    const postData = `mode=1&card-id=${cardId}&trade-id=&form_name=form&point=${sellPrice}&term=3&handle=1`;
-    await makeRequest(NOBOT_URL.TRADE_SELL, 'POST', login, postData);
-    this.logger.info('Card %d posted for %d by %s.', cardId, sellPrice, login);
-    // track sell state
-    const accountCard = await getRepository<AccountCard>('AccountCard').findOne(cardId, { relations: ['card'] });
-    if (accountCard) {
-      this.logger.info('Create sell state for %d: %s', cardId, accountCard.card.name);
-      const repository = getRepository<SellState>('SellState');
-      const sellState = await repository.findOne({ accountCard: { id: cardId } });
-      if (sellState) {
-        sellState.price = sellPrice;
-        sellState.status = 'SELLING';
-        sellState.postDate = new Date();
-        repository.save(sellState);
-      } else {
-        repository.save({
-          accountCard: { id: cardId },
-          status: 'SELLING',
-          price: sellPrice,
-          postDate: new Date()
-        });
-      }
-    } else {
-      this.logger.error('Account card %d not found.', cardId);
     }
   };
 

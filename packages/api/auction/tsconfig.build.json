@@ -1,0 +1,18 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "sourceMap": false,
+    "outDir": "./lib",
+    "rootDir": "./src",
+    "composite": true
+  },
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../../core/database/tsconfig.build.json"
+    },
+    {
+      "path": "../../core/commons/tsconfig.build.json"
+    }
+  ]
+}
