@@ -1,5 +1,5 @@
 import { makeRequest, NOBOT_URL, regexUtils } from '@nobot-core/commons';
-import { Account, AccountCard, Card, CardRepository, StoreCard } from '@nobot-core/database';
+import { Account, AccountCard, Card, CardRepository, SellState, StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { getConnection, getCustomRepository, getRepository, In, MoreThan, Not } from 'typeorm';
 import { getProperty, getRarity, getStar, imagesToNumber } from './card-utils';
@@ -321,10 +321,32 @@ class CardService {
     }
   };
 
-  sell = async (login: string, cardId: string, sellPrice: number): Promise<void> => {
+  sell = async (login: string, cardId: number, sellPrice: number): Promise<void> => {
     const postData = `mode=1&card-id=${cardId}&trade-id=&form_name=form&point=${sellPrice}&term=3&handle=1`;
     await makeRequest(NOBOT_URL.TRADE_SELL, 'POST', login, postData);
-    this.logger.info('card %s posted for %d by %s.', cardId, sellPrice, login);
+    this.logger.info('Card %d posted for %d by %s.', cardId, sellPrice, login);
+    // track sell state
+    const accountCard = await getRepository<AccountCard>('AccountCard').findOne(cardId, { relations: ['card'] });
+    if (accountCard) {
+      this.logger.info('Create sell state for %d: %s', cardId, accountCard.card.name);
+      const repository = getRepository<SellState>('SellState');
+      const sellState = await repository.findOne({ accountCard: { id: cardId } });
+      if (sellState) {
+        sellState.price = sellPrice;
+        sellState.status = 'SELLING';
+        sellState.postDate = new Date();
+        repository.save(sellState);
+      } else {
+        repository.save({
+          accountCard: { id: cardId },
+          status: 'SELLING',
+          price: sellPrice,
+          postDate: new Date()
+        });
+      }
+    } else {
+      this.logger.error('Account card %d not found.', cardId);
+    }
   };
 
   private getNp = async (login: string): Promise<number> => {

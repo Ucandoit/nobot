@@ -1,5 +1,5 @@
 import { Connection, createConnection } from 'typeorm';
-import { Account, AccountCard, AuctionConfig, AuctionHistory, Card, Parameter, StoreCard } from './entities';
+import { Account, AccountCard, AuctionConfig, AuctionHistory, Card, Parameter, SellState, StoreCard } from './entities';
 
 export interface PostgresConnectionOptions {
   host: string;
@@ -18,7 +18,7 @@ const initConnection = async (options: PostgresConnectionOptions): Promise<Conne
     port: 5432,
     schema: 'public',
     synchronize: true,
-    entities: [Account, AuctionConfig, AuctionHistory, Card, Parameter, AccountCard, StoreCard],
+    entities: [Account, AuctionConfig, AuctionHistory, Card, Parameter, AccountCard, StoreCard, SellState],
     logging: false,
     ...options
   });
