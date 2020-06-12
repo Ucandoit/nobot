@@ -42,7 +42,5 @@ export default async (): Promise<void> => {
     res.status(200).send();
   });
 
-  cardService.scanAccountCards('xzdykerik_04');
-
   app.listen(3000);
 };
