@@ -13,3 +13,7 @@ projectName: api_card
 ---
   projectName: api_auction
   <<: !config config
+
+---
+  projectName: api_sample
+  <<: !config config
