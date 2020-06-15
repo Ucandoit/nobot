@@ -34,6 +34,7 @@ services:
       - /usr/src/app/packages/api/account-manager
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/card
+      - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
@@ -52,6 +53,7 @@ services:
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/api/account-manager
+      - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
@@ -70,6 +72,7 @@ services:
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/api/card
+      - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
@@ -88,6 +91,7 @@ services:
       - /usr/src/app/packages/api/account-manager
       - /usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/api/card
+      - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:

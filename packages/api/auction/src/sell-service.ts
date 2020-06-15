@@ -1,29 +1,38 @@
-import { makeRequest, NOBOT_URL } from '@nobot-core/commons';
+import { makeRequest, NOBOT_URL, Service } from '@nobot-core/commons';
 import { AccountCard, SellState, SellStateRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
-import { getCustomRepository, getRepository } from 'typeorm';
+import { Connection, Repository } from 'typeorm';
 
-class SellService {
+@Service()
+export default class SellService {
   private logger = getLogger(SellService.name);
+
+  private accountCardRepository: Repository<AccountCard>;
+
+  private sellStateRepository: SellStateRepository;
+
+  constructor(connection: Connection) {
+    this.accountCardRepository = connection.getRepository<AccountCard>('AccountCard');
+    this.sellStateRepository = connection.getCustomRepository(SellStateRepository);
+  }
 
   public sell = async (login: string, cardId: number, sellPrice: number): Promise<void> => {
     const postData = `mode=1&card-id=${cardId}&trade-id=&form_name=form&point=${sellPrice}&term=3&handle=1`;
     await makeRequest(NOBOT_URL.TRADE_SELL, 'POST', login, postData);
     this.logger.info('Card %d posted for %d by %s.', cardId, sellPrice, login);
     // track sell state
-    const accountCard = await getRepository<AccountCard>('AccountCard').findOne(cardId, { relations: ['card'] });
+    const accountCard = await this.accountCardRepository.findOne(cardId, { relations: ['card'] });
     if (accountCard) {
-      const repository = getRepository<SellState>('SellState');
-      const sellState = await repository.findOne({ accountCard: { id: cardId } });
+      const sellState = await this.sellStateRepository.findOne({ accountCard: { id: cardId } });
       if (sellState) {
         this.logger.info('Update sell state for %d: %s', cardId, accountCard.card.name);
         sellState.price = sellPrice;
         sellState.status = 'SELLING';
         sellState.postDate = new Date();
-        repository.save(sellState);
+        this.sellStateRepository.save(sellState);
       } else {
         this.logger.info('Create sell state for %d: %s', cardId, accountCard.card.name);
-        repository.save({
+        this.sellStateRepository.save({
           accountCard: { id: cardId },
           status: 'SELLING',
           price: sellPrice,
@@ -36,13 +45,12 @@ class SellService {
   };
 
   public getSellStates = (): Promise<SellState[]> => {
-    return getCustomRepository(SellStateRepository).getAll();
+    return this.sellStateRepository.getAll();
   };
 
   public checkSellStates = async (): Promise<void> => {
     this.logger.info('Check sell states.');
-    const sellStateRepository = getCustomRepository(SellStateRepository);
-    const cards = await sellStateRepository.getSellingCards();
+    const cards = await this.sellStateRepository.getSellingCards();
     // group by login first
     cards
       .reduce((acc: Map<string, SellState[]>, card: SellState) => {
@@ -72,7 +80,7 @@ class SellService {
             this.logger.info('Card %s of %s is not found, maybe already sold.', accountCard.card.name, login);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { account, card, ...rest } = accountCard;
-            await sellStateRepository.update(state.id, {
+            await this.sellStateRepository.update(state.id, {
               status: 'SOLD',
               sellDate: new Date(),
               accountCard: null,
@@ -83,5 +91,3 @@ class SellService {
       });
   };
 }
-
-export default new SellService();

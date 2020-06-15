@@ -1,33 +1,6 @@
-import { loadProjectConfig, redisClient } from '@nobot-core/commons';
-import initConnection from '@nobot-core/database';
-import { configure, getLogger } from 'log4js';
-import startApp from './app';
+import { NobotApp } from '@nobot-core/commons';
 
-configure({
-  appenders: {
-    out: { type: 'stdout' }
-  },
-  categories: { default: { appenders: ['out'], level: 'info' } },
-  disableClustering: true
-});
-
-const logger = getLogger('auction-index');
-
-const { redis, database } = loadProjectConfig('api_auction');
-
-redisClient.start({
-  ...redis,
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  retry_strategy: (options) => {
-    logger.info('Retrying.');
-    if (options.attempt > 5) {
-      throw new Error('Retry attempts reached.');
-    }
-    return 5000;
-  }
-});
-
-initConnection(database).then(() => {
-  logger.info('init postgres.');
-  startApp();
-});
+(async function startApp(): Promise<void> {
+  const nobotApp = new NobotApp('api_auction', __dirname);
+  await nobotApp.start();
+})();
