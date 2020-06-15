@@ -23,6 +23,7 @@ export default class NobotApp {
   }
 
   start = async (): Promise<void> => {
+    // configure log4js
     configure({
       appenders: {
         out: { type: 'stdout' }
@@ -59,6 +60,7 @@ export default class NobotApp {
       .filter((filename) => !filename.endsWith('d.ts'))
       .map((filename) => `${this.scanDir}/${filename}`);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const controllers: any[] = [];
 
     files.forEach((file) => {
@@ -68,7 +70,6 @@ export default class NobotApp {
         const m = modules[key];
 
         if (Reflect.hasMetadata(METADATA_KEY.AUTOWIRED, m)) {
-          // const autowired = Reflect.getMetadata(METADATA_KEY.AUTOWIRED, m);
           container.bind(m).toSelf().inSingletonScope();
 
           if (Reflect.hasMetadata(METADATA_KEY.BASE_PATH, m) && Reflect.hasMetadata(METADATA_KEY.ROUTES, m)) {
@@ -79,6 +80,7 @@ export default class NobotApp {
     });
 
     controllers.forEach((controller) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const instance: any = container.get(controller);
       const basePath = Reflect.getMetadata(METADATA_KEY.BASE_PATH, controller);
       const routes: Array<RouteDefinition> = Reflect.getMetadata(METADATA_KEY.ROUTES, controller);

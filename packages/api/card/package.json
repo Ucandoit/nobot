@@ -6,8 +6,8 @@
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "tsc -b ./tsconfig.build.json",
-    "watch": "tsc -b ./tsconfig.build.json --watch",
+    "build": "rimraf lib && tsc -b --force ./tsconfig.build.json",
+    "watch": "rimraf lib && tsc -b ./tsconfig.build.json --watch",
     "dev": "nodemon",
     "start": "node ./lib/index.js"
   },

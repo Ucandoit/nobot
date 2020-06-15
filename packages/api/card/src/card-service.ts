@@ -1,33 +1,47 @@
-import { makeRequest, NOBOT_URL, regexUtils } from '@nobot-core/commons';
+import { makeRequest, NOBOT_URL, regexUtils, Service } from '@nobot-core/commons';
 import { Account, AccountCard, Card, CardRepository, SellStateRepository, StoreCard } from '@nobot-core/database';
 import { getLogger } from 'log4js';
-import { getConnection, getCustomRepository, getRepository, In, MoreThan, Not } from 'typeorm';
+import { Connection, getCustomRepository, In, MoreThan, Not, Repository } from 'typeorm';
 import { getProperty, getRarity, getStar, imagesToNumber } from './card-utils';
 
-class CardService {
+@Service()
+export default class CardService {
   private logger = getLogger(CardService.name);
+
+  private cardRepository: CardRepository;
+
+  private accountRepository: Repository<Account>;
+
+  private accountCardRepository: Repository<AccountCard>;
+
+  private storeCardRepository: Repository<StoreCard>;
+
+  constructor(connection: Connection) {
+    this.cardRepository = connection.getCustomRepository(CardRepository);
+    this.accountRepository = connection.getRepository<Account>('Account');
+    this.accountCardRepository = connection.getRepository<AccountCard>('AccountCard');
+    this.storeCardRepository = connection.getRepository<StoreCard>('StoreCard');
+  }
 
   getAll = async (
     page = 0,
     size = 20,
     sort: keyof Card = 'number',
     order: 'ASC' | 'DESC' = 'ASC',
-    filters: Record<keyof Card, string>
+    filters?: Record<keyof Card, string>
   ): Promise<[Card[], number]> => {
-    return getCustomRepository(CardRepository).findAll(page, size, sort, order, filters);
+    return this.cardRepository.findAll(page, size, sort, order, filters);
   };
 
   scanAllStoredCards = async (): Promise<void> => {
-    const accounts = await getConnection()
-      .getRepository<Account>('Account')
-      .find({
-        where: {
-          expirationDate: MoreThan(new Date())
-        },
-        order: {
-          login: 'ASC'
-        }
-      });
+    const accounts = await this.accountRepository.find({
+      where: {
+        expirationDate: MoreThan(new Date())
+      },
+      order: {
+        login: 'ASC'
+      }
+    });
     await accounts.reduce(async (previous: Promise<void>, account: Account): Promise<void> => {
       await previous;
       return this.scanStoredCards(account.login);
@@ -48,16 +62,14 @@ class CardService {
   };
 
   scanAllAccountCards = async (): Promise<void> => {
-    const accounts = await getConnection()
-      .getRepository<Account>('Account')
-      .find({
-        where: {
-          expirationDate: MoreThan(new Date())
-        },
-        order: {
-          login: 'ASC'
-        }
-      });
+    const accounts = await this.accountRepository.find({
+      where: {
+        expirationDate: MoreThan(new Date())
+      },
+      order: {
+        login: 'ASC'
+      }
+    });
     await accounts.reduce(async (previous: Promise<void>, account: Account): Promise<void> => {
       await previous;
       return this.scanAccountCards(account.login);
@@ -88,7 +100,7 @@ class CardService {
       this.logger.info(`Scan %s's deck cards.`, login);
       await this.scanAccountPage(login, NOBOT_URL.MANAGE_DECK_CARDS, 1, cardIds);
       // card does not exist anymore, need to update in sell state if it was selling before
-      const cardsToDelete = await getRepository<AccountCard>('AccountCard').find({
+      const cardsToDelete = await this.accountCardRepository.find({
         where: { account: { login }, id: Not(In(cardIds)) }
       });
       cardsToDelete.forEach(async (cardToDelete) => {
@@ -107,7 +119,7 @@ class CardService {
           });
         }
         this.logger.info('Delete account card %d of %s', cardToDelete.id, login);
-        await getRepository<AccountCard>('AccountCard').delete(cardToDelete.id);
+        await this.accountCardRepository.delete(cardToDelete.id);
       });
     } catch (err) {
       this.logger.error(err);
@@ -125,13 +137,12 @@ class CardService {
           | null;
         if (id) {
           const count = parseInt(cardElement.parent().prev().find('span').last().text(), 10);
-          const repository = getConnection().getRepository<StoreCard>('StoreCard');
-          const storeCard = await repository.findOne({ login, id });
+          const storeCard = await this.storeCardRepository.findOne({ login, id });
           if (storeCard) {
             storeCard.count = count;
-            await repository.save(storeCard);
+            await this.storeCardRepository.save(storeCard);
           } else {
-            await repository.save({ login, id, count });
+            await this.storeCardRepository.save({ login, id, count });
           }
         }
       });
@@ -182,19 +193,18 @@ class CardService {
       | null;
     if (id) {
       cardIds.push(id);
-      const repository = getConnection().getRepository<AccountCard>('AccountCard');
-      const accountCard = await repository.findOne(id, { select: ['id', 'card'], relations: ['card'] });
+      const accountCard = await this.accountCardRepository.findOne(id, { select: ['id', 'card'], relations: ['card'] });
       if (accountCard) {
         // update
         this.logger.info('Update account card %s for %s.', accountCard.card.name, login);
-        repository.update({ id: accountCard.id }, this.htmlToAccountCard(cardElement));
+        this.accountCardRepository.update({ id: accountCard.id }, this.htmlToAccountCard(cardElement));
       } else {
         // create
         const tradable =
           cardElement.find('.card-trade').length === 0 ||
           !cardElement.find('.card-trade').attr('src')?.includes('mark_unrecommend_01');
         const number = parseInt(cardElement.parent().prev().find('span').last().text().replace('No.', ''), 10);
-        const card = await getRepository<Card>('Card').findOne({ number, tradable });
+        const card = await this.cardRepository.findOne({ number, tradable });
         if (card) {
           const newCard = {
             ...this.htmlToAccountCard(cardElement),
@@ -204,7 +214,7 @@ class CardService {
             card: { id: card?.id }
           };
           this.logger.info('Create account card for %s.', login);
-          repository.save(newCard);
+          this.accountCardRepository.save(newCard);
         } else {
           this.logger.error('Card %d not found.', number);
         }
@@ -358,5 +368,3 @@ class CardService {
     await makeRequest(NOBOT_URL.TRADE_BUY, 'POST', login, requestParams);
   };
 }
-
-export default new CardService();
