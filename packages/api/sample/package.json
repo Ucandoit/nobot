@@ -1,13 +1,13 @@
 {
-  "name": "@nobot-api/card",
-  "version": "1.0.0",
+  "name": "@nobot-api/sample",
+  "version": "0.1.0",
   "private": true,
-  "description": "Nobot card module",
+  "description": "Nobot sample module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "rimraf lib && tsc -b --force ./tsconfig.build.json",
-    "watch": "rimraf lib && tsc -b ./tsconfig.build.json --watch",
+    "build": "tsc -b ./tsconfig.build.json",
+    "watch": "tsc -b ./tsconfig.build.json --watch",
     "dev": "nodemon",
     "start": "node ./lib/index.js"
   },
