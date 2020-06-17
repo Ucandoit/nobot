@@ -1,5 +1,5 @@
 import { makeRequest, NOBOT_URL, Service } from '@nobot-core/commons';
-import { AccountCard, SellState, SellStateRepository } from '@nobot-core/database';
+import { AccountCard, Card, SellState, SellStateRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Connection, Repository } from 'typeorm';
 
@@ -9,10 +9,13 @@ export default class SellService {
 
   private accountCardRepository: Repository<AccountCard>;
 
+  private cardRepository: Repository<Card>;
+
   private sellStateRepository: SellStateRepository;
 
   constructor(connection: Connection) {
     this.accountCardRepository = connection.getRepository<AccountCard>('AccountCard');
+    this.cardRepository = connection.getRepository<Card>('Card');
     this.sellStateRepository = connection.getCustomRepository(SellStateRepository);
   }
 
@@ -44,8 +47,14 @@ export default class SellService {
     }
   };
 
-  public getSellStates = (): Promise<SellState[]> => {
-    return this.sellStateRepository.getAll();
+  public getSellStates = (
+    page?: number,
+    size?: number,
+    sort?: string,
+    order?: 'ASC' | 'DESC',
+    filters?: Partial<SellState>
+  ): Promise<[SellState[], number]> => {
+    return this.sellStateRepository.findAll(page, size, sort, order, filters);
   };
 
   public checkSellStates = async (): Promise<void> => {
@@ -79,7 +88,7 @@ export default class SellService {
           } else {
             this.logger.info('Card %s of %s is not found, maybe already sold.', accountCard.card.name, login);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { account, card, ...rest } = accountCard;
+            const { account, ...rest } = accountCard;
             await this.sellStateRepository.update(state.id, {
               status: 'SOLD',
               sellDate: new Date(),

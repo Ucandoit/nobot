@@ -1,2 +1,2 @@
-// eslint-disable-next-line import/prefer-default-export
 export { default as HttpMethod } from './http-method';
+export * from './web-utils';

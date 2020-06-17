@@ -19,4 +19,28 @@ export default class SellStateRepository extends Repository<SellState> {
       }
     });
   };
+
+  findAll = (
+    page = 0,
+    size = 20,
+    sort = 'postDate',
+    order: 'ASC' | 'DESC' = 'DESC',
+    filters?: Partial<SellState>
+  ): Promise<[SellState[], number]> => {
+    const query = this.createQueryBuilder('sellState')
+      .leftJoinAndSelect('sellState.accountCard', 'accountCard')
+      .leftJoinAndSelect('accountCard.card', 'card')
+      .take(size)
+      .skip(page * size)
+      .orderBy({
+        [`sellState.${sort}`]: {
+          order,
+          nulls: order === 'ASC' ? 'NULLS FIRST' : 'NULLS LAST'
+        }
+      })
+      .where({
+        ...filters
+      });
+    return query.getManyAndCount();
+  };
 }
