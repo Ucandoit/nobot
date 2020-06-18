@@ -17,3 +17,7 @@ projectName: api_card
 ---
   projectName: api_sample
   <<: !config config
+
+---
+  projectName: api_story
+  <<: !config config

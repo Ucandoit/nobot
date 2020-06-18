@@ -35,10 +35,10 @@ export default class CardController {
     res.status(200).send();
   }
 
-  @RequestMapping('/tradeNp')
-  tradeNp(req: Request, res: Response): void {
+  @RequestMapping('/trade/np')
+  async tradeNp(req: Request, res: Response): Promise<void> {
     const { source, target } = req.query;
-    this.cardService.tradeNp(source as string, target as string);
+    await this.cardService.tradeNp(source as string, target as string);
     res.status(200).send();
   }
 }
