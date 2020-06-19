@@ -1,5 +1,6 @@
 import { makeRequest, NOBOT_URL, regexUtils, Service } from '@nobot-core/commons';
 import { getLogger } from 'log4js';
+import { clearInterval } from 'timers';
 import StoryTask from './story-task';
 
 @Service()
@@ -14,7 +15,9 @@ export default class StoryService {
       task = new StoryTask(login, extraTicket);
       this.tasks.push(task);
     } else if (task.isStop()) {
-      task = new StoryTask(login, extraTicket);
+      task.setStop(false);
+      task.setExtraTicket(extraTicket);
+      task.setRetry(0);
     }
     this.checkFight(login);
   };
@@ -24,6 +27,11 @@ export default class StoryService {
     const task = this.tasks.find((t) => t.getLogin() === login);
     if (task !== undefined) {
       task.setStop(true);
+      const interval = task.getInterval();
+      if (interval) {
+        clearInterval(interval);
+        task.setInterval(null);
+      }
     }
   };
 
@@ -101,7 +109,6 @@ export default class StoryService {
             if (
               (chapter === 1 && section === 1) ||
               (chapter === 4 && section === 3) ||
-              (chapter === 6 && section === 5) ||
               (chapter === 13 && section === 3) ||
               (chapter === 16 && section === 3)
             ) {
@@ -127,9 +134,10 @@ export default class StoryService {
               login,
               seconds
             );
-            setTimeout(() => {
+            const interval = setTimeout(() => {
               this.checkFight(login);
             }, seconds * 1000);
+            task.setInterval(interval);
           } else {
             this.logger.warn('No chapter text for %s.', login);
             setTimeout(() => {

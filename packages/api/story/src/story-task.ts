@@ -13,6 +13,8 @@ export default class StoryTask {
 
   private team: number;
 
+  private interval: NodeJS.Timeout | null;
+
   constructor(login: string, extraTicket: number) {
     this.login = login;
     this.extraTicket = extraTicket;
@@ -55,5 +57,11 @@ export default class StoryTask {
 
   setTeam = (team: number): void => {
     this.team = team;
+  };
+
+  getInterval = (): NodeJS.Timeout | null => this.interval;
+
+  setInterval = (interval: NodeJS.Timeout | null): void => {
+    this.interval = interval;
   };
 }
