@@ -11,6 +11,8 @@ export default class StoryTask {
 
   private retry = 0;
 
+  private team: number;
+
   constructor(login: string, extraTicket: number) {
     this.login = login;
     this.extraTicket = extraTicket;
@@ -44,4 +46,14 @@ export default class StoryTask {
   };
 
   getRetry = (): number => this.retry;
+
+  setRetry = (retry: number): void => {
+    this.retry = retry;
+  };
+
+  getTeam = (): number => this.team;
+
+  setTeam = (team: number): void => {
+    this.team = team;
+  };
 }

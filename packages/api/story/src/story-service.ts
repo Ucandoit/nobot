@@ -14,8 +14,7 @@ export default class StoryService {
       task = new StoryTask(login, extraTicket);
       this.tasks.push(task);
     } else if (task.isStop()) {
-      task.setStop(false);
-      task.setExtraTicket(extraTicket);
+      task = new StoryTask(login, extraTicket);
     }
     this.checkFight(login);
   };
@@ -37,9 +36,13 @@ export default class StoryService {
       this.logger.info('Task for %s is forced to stop.', login);
       return;
     }
-    if (task.getRetry() > 3) {
+    if (task.getRetry() > 1) {
       this.logger.info('Task for %s is forced to stop because retried 3 times on the same section.', login);
       task.setStop(true);
+      this.logger.info('Try 2 hour layer for %s', login);
+      setTimeout(() => {
+        this.checkFight(login);
+      }, 120 * 60 * 1000);
       return;
     }
     try {
@@ -77,6 +80,37 @@ export default class StoryService {
             const chapter = parseInt(matcher[1], 10);
             const section = parseInt(matcher[2], 10);
             task.setChapterAndSection(chapter, section);
+
+            if (
+              (chapter === 21 && section === 2) ||
+              (chapter === 30 && section === 1) ||
+              (chapter === 30 && section === 5)
+            ) {
+              this.logger.info('Difficult enemy, change teams for %s.', login);
+              await this.changeTeams(login, 1);
+              task.setTeam(1);
+            } else if (chapter >= 20 && task.getTeam() !== 5) {
+              this.logger.info('Change to team 5 for %s.', login);
+              await this.changeTeams(login, 5);
+              task.setTeam(5);
+            } else if (chapter < 20 && task.getTeam() !== 4) {
+              this.logger.info('Change to team 4 for %s.', login);
+              await this.changeTeams(login, 4);
+              task.setTeam(4);
+            }
+            if (
+              (chapter === 1 && section === 1) ||
+              (chapter === 4 && section === 3) ||
+              (chapter === 6 && section === 5) ||
+              (chapter === 13 && section === 3) ||
+              (chapter === 16 && section === 3)
+            ) {
+              this.logger.info('Activating cattale fever for %s.', login);
+              await makeRequest(NOBOT_URL.CATTALE_FEVER, 'POST', login, 'p=map');
+              // TODO: check
+              await makeRequest(NOBOT_URL.NOTIFY_BONUS, 'GET', login);
+              await makeRequest(NOBOT_URL.MAP, 'GET', login);
+            }
             const seconds = this.getSeconds(mapPage(`#${detailId} .quest_info`).eq(5).text());
             const nextUrl = (await makeRequest(
               NOBOT_URL.MAP,
@@ -106,7 +140,7 @@ export default class StoryService {
           this.logger.warn('No target found for %s.', login);
           setTimeout(() => {
             this.checkFight(login);
-          }, 5000);
+          }, 3000);
         }
       }
     } catch (err) {
@@ -115,6 +149,11 @@ export default class StoryService {
         this.checkFight(login);
       }, 5000);
     }
+  };
+
+  getStatus = async (login: string): Promise<boolean> => {
+    const task = this.tasks.find((t) => t.getLogin() === login);
+    return task !== undefined && !task.isStop();
   };
 
   private getSeconds = (text: string): number => {
@@ -161,5 +200,15 @@ export default class StoryService {
     }
     const deckFood = food / count;
     return deckFood > 620 ? 620 : deckFood;
+  };
+
+  public changeTeams = async (login: string, index: number): Promise<void> => {
+    const page = (await makeRequest(
+      `${NOBOT_URL.MANAGE_DECK}?display_deck_index=${index}`,
+      'GET',
+      login
+    )) as CheerioStatic;
+    const form = page('#form');
+    await makeRequest(NOBOT_URL.MANAGE_DECK, 'POST', login, form.serialize());
   };
 }

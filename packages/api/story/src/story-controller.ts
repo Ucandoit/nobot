@@ -29,6 +29,13 @@ export default class StoryController {
     res.status(200).send();
   }
 
+  @RequestMapping('/status/:login')
+  async status(req: Request, res: Response): Promise<void> {
+    res.status(200).send({
+      status: await this.storyService.getStatus(req.params.login)
+    });
+  }
+
   // @RequestMapping('/status')
   // async getSellStates(req: Request, res: Response): Promise<void> {
   //   const page = getQueryParamAsInt(req, 'page');
