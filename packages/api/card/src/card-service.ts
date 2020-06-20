@@ -107,7 +107,7 @@ export default class CardService {
         const sellStateRepository = getCustomRepository(SellStateRepository);
         const sellState = await sellStateRepository.findOne(
           { accountCard: { id: cardToDelete.id } },
-          { relations: ['accountCard'] }
+          { relations: ['accountCard', 'accountCard.card'] }
         );
         if (sellState) {
           this.logger.info('Archive sell state for %d', sellState.accountCard?.id);
