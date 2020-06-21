@@ -1,5 +1,5 @@
 import { makeRequest, NOBOT_URL, Service } from '@nobot-core/commons';
-import { AccountCard, SellState, SellStateRepository } from '@nobot-core/database';
+import { AccountCard, Card, SellState, SellStateRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Connection, Repository } from 'typeorm';
 
@@ -9,13 +9,13 @@ export default class SellService {
 
   private accountCardRepository: Repository<AccountCard>;
 
-  // private cardRepository: Repository<Card>;
+  private cardRepository: Repository<Card>;
 
   private sellStateRepository: SellStateRepository;
 
   constructor(connection: Connection) {
     this.accountCardRepository = connection.getRepository<AccountCard>('AccountCard');
-    // this.cardRepository = connection.getRepository<Card>('Card');
+    this.cardRepository = connection.getRepository<Card>('Card');
     this.sellStateRepository = connection.getCustomRepository(SellStateRepository);
   }
 
@@ -102,6 +102,19 @@ export default class SellService {
         }
       })
     );
+  };
+
+  fix = async (): Promise<void> => {
+    const sellStates = await this.sellStateRepository.findByIds([86, 111, 112]);
+    sellStates.forEach(async (sellState) => {
+      const card = await this.cardRepository.findOne((sellState.archivedData as any).cardId);
+      this.sellStateRepository.update(sellState.id, {
+        archivedData: {
+          ...sellState.archivedData,
+          card
+        }
+      });
+    });
   };
 
   private executeConcurrent = async <T>(

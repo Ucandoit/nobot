@@ -30,4 +30,10 @@ export default class SellController {
     await this.sellService.checkSellStates();
     res.status(200).send();
   }
+
+  @RequestMapping('/fix')
+  async fix(req: Request, res: Response): Promise<void> {
+    await this.sellService.fix();
+    res.status(200).send();
+  }
 }
