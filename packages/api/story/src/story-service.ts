@@ -44,6 +44,7 @@ export default class StoryService {
       this.logger.info('Task for %s is forced to stop.', login);
       return;
     }
+    // TODO: retry shoule be after chapter check
     if (task.getRetry() > 2) {
       this.logger.info('Task for %s is forced to stop because retried 3 times on the same section.', login);
       task.setStop(true);
@@ -92,6 +93,7 @@ export default class StoryService {
             if (
               (chapter === 21 && section === 2) ||
               (chapter === 26 && section === 5) ||
+              (chapter === 29 && section === 2) ||
               (chapter === 29 && section === 5) ||
               (chapter === 30 && section === 1) ||
               (chapter === 30 && section === 5)
