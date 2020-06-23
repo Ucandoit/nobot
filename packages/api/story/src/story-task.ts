@@ -15,9 +15,15 @@ export default class StoryTask {
 
   private interval: NodeJS.Timeout | null;
 
-  constructor(login: string, extraTicket: number) {
+  private mode: string;
+
+  private seconds: number;
+
+  constructor(login: string, extraTicket: number, mode: string, seconds: number) {
     this.login = login;
     this.extraTicket = extraTicket;
+    this.mode = mode;
+    this.seconds = seconds;
   }
 
   setChapterAndSection = (chapter: number, section: number): void => {
@@ -63,5 +69,17 @@ export default class StoryTask {
 
   setInterval = (interval: NodeJS.Timeout | null): void => {
     this.interval = interval;
+  };
+
+  getMode = (): string => this.mode;
+
+  setMode = (mode: string): void => {
+    this.mode = mode;
+  };
+
+  getSeconds = (): number => this.seconds;
+
+  setSeconds = (seconds: number): void => {
+    this.seconds = seconds;
   };
 }

@@ -9,15 +9,17 @@ export default class StoryService {
 
   private tasks: StoryTask[] = [];
 
-  start = async (login: string, extraTicket = 0): Promise<void> => {
+  start = async (login: string, extraTicket = 0, mode = 'medium', seconds = 150): Promise<void> => {
     let task = this.tasks.find((t) => t.getLogin() === login);
     if (task === undefined) {
-      task = new StoryTask(login, extraTicket);
+      task = new StoryTask(login, extraTicket, mode, seconds);
       this.tasks.push(task);
     } else if (task.isStop()) {
       task.setStop(false);
       task.setExtraTicket(extraTicket);
       task.setRetry(0);
+      task.setMode(mode);
+      task.setSeconds(seconds);
     }
     this.checkFight(login);
   };
@@ -44,22 +46,14 @@ export default class StoryService {
       this.logger.info('Task for %s is forced to stop.', login);
       return;
     }
-    // TODO: retry shoule be after chapter check
-    if (task.getRetry() > 2) {
-      this.logger.info('Task for %s is forced to stop because retried 3 times on the same section.', login);
-      task.setStop(true);
-      this.logger.info('Try 2 hour layer for %s', login);
-      setTimeout(() => {
-        this.checkFight(login);
-      }, 120 * 60 * 1000);
-      return;
-    }
     try {
       this.logger.info('Check fight for %s.', login);
       await makeRequest(NOBOT_URL.NOTIFY, 'POST', login, 'notify_flag_6=32');
       const mapPage = (await makeRequest(NOBOT_URL.MAP, 'GET', login)) as CheerioStatic;
-      const currentFood = await this.convertToFood(mapPage, login);
-      const deckFood = await this.getDeckFood(login);
+      const currentFood = parseInt(mapPage('#element_food').text(), 10);
+      // const currentFood = await this.convertToFood(mapPage, login);
+      // const deckFood = await this.getDeckFood(login);
+      const deckFood = 620;
       if (currentFood < deckFood) {
         this.logger.info('Not enough food for %s (current: %d).', login, currentFood);
         if (task.getExtraTicket() > 0) {
@@ -68,7 +62,7 @@ export default class StoryService {
           task.setExtraTicket(task.getExtraTicket() - 1);
           setTimeout(() => {
             this.checkFight(login);
-          }, 2000);
+          }, 1000);
         } else {
           this.logger.info('Stop task for %s', login);
           task.setStop(true);
@@ -77,7 +71,7 @@ export default class StoryService {
         this.logger.info('Still in battle for %s.', login);
         setTimeout(() => {
           this.checkFight(login);
-        }, 5000);
+        }, 1000);
       } else {
         const target = mapPage('.map_point_cte');
         if (target.length > 0) {
@@ -110,18 +104,17 @@ export default class StoryService {
               await this.changeTeams(login, 4);
               task.setTeam(4);
             }
-            if (
-              (chapter === 1 && section === 1) ||
-              (chapter === 4 && section === 3) ||
-              (chapter === 13 && section === 3) ||
-              (chapter === 16 && section === 3)
-            ) {
-              this.logger.info('Activating cattale fever for %s.', login);
-              await makeRequest(NOBOT_URL.CATTALE_FEVER, 'POST', login, 'p=map');
-              // TODO: check
-              await makeRequest(NOBOT_URL.NOTIFY_BONUS, 'GET', login);
-              await makeRequest(NOBOT_URL.MAP, 'GET', login);
-            }
+            // if (
+            //   (chapter === 1 && section === 1) ||
+            //   (chapter === 4 && section === 3) ||
+            //   (chapter === 13 && section === 3) ||
+            //   (chapter === 16 && section === 3)
+            // ) {
+            //   this.logger.info('Activating cattale fever for %s.', login);
+            //   await makeRequest(NOBOT_URL.CATTALE_FEVER, 'POST', login, 'p=map');
+            //   await makeRequest(NOBOT_URL.NOTIFY_BONUS, 'GET', login);
+            //   await makeRequest(NOBOT_URL.MAP, 'GET', login);
+            // }
             const seconds = this.getSeconds(mapPage(`#${detailId} .quest_info`).eq(5).text());
             const nextUrl = (await makeRequest(
               NOBOT_URL.MAP,
@@ -138,10 +131,19 @@ export default class StoryService {
               login,
               seconds
             );
-            const interval = setTimeout(() => {
-              this.checkFight(login);
-            }, seconds * 1000);
-            task.setInterval(interval);
+            if (task.getMode() === 'fast' || (task.getMode() === 'medium' && seconds > task.getSeconds())) {
+              this.logger.info('Quick move for %s.', login);
+              await makeRequest(NOBOT_URL.FINISH_MOVE, 'POST', login, 'p=map');
+              const interval = setTimeout(() => {
+                this.checkFight(login);
+              }, 100);
+              task.setInterval(interval);
+            } else {
+              const interval = setTimeout(() => {
+                this.checkFight(login);
+              }, seconds * 1000);
+              task.setInterval(interval);
+            }
           } else {
             this.logger.warn('No chapter text for %s.', login);
             setTimeout(() => {
@@ -152,7 +154,7 @@ export default class StoryService {
           this.logger.warn('No target found for %s.', login);
           setTimeout(() => {
             this.checkFight(login);
-          }, 3000);
+          }, 1000);
         }
       }
     } catch (err) {
@@ -173,7 +175,7 @@ export default class StoryService {
     return parseInt(minute, 10) * 60 + parseInt(second, 10);
   };
 
-  private convertToFood = async (page: CheerioStatic, login: string): Promise<number> => {
+  public convertToFood = async (page: CheerioStatic, login: string): Promise<number> => {
     const currentFood = parseInt(page('#element_food').text(), 10);
     const currentFire = parseInt(page('#element_fire').text(), 10);
     const currentEarth = parseInt(page('#element_earth').text(), 10);
@@ -192,7 +194,7 @@ export default class StoryService {
     return currentFood;
   };
 
-  private getDeckFood = async (login: string): Promise<number> => {
+  public getDeckFood = async (login: string): Promise<number> => {
     const page = (await makeRequest(NOBOT_URL.MANAGE_DECK, 'GET', login)) as CheerioStatic;
     let food = 0;
     let count = 0;

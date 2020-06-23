@@ -19,7 +19,8 @@ export default class StoryController {
   @RequestMapping('/start/:login')
   async start(req: Request, res: Response): Promise<void> {
     const extraTicket = req.query.ticket ? parseInt(req.query.ticket as string, 10) : undefined;
-    this.storyService.start(req.params.login, extraTicket);
+    const seconds = req.query.seconds ? parseInt(req.query.seconds as string, 10) : undefined;
+    this.storyService.start(req.params.login, extraTicket, req.query.mode as string, seconds);
     res.status(200).send();
   }
 

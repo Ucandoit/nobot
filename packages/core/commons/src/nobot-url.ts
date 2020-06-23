@@ -2,6 +2,7 @@ export default {
   BATTLE: 'http://210.140.157.168/battle/setup.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
+  FINISH_MOVE: 'http://210.140.157.168/command/sp_finish_move.json',
   TRADE: 'http://210.140.157.168/trade.htm',
   TRADE_BUY: 'http://210.140.157.168/card/trade_buy.htm',
   TRADE_SELL: 'http://210.140.157.168/card/trade_sell.htm',
