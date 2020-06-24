@@ -37,20 +37,15 @@ export default class StoryController {
     });
   }
 
-  // @RequestMapping('/status')
-  // async getSellStates(req: Request, res: Response): Promise<void> {
-  //   const page = getQueryParamAsInt(req, 'page');
-  //   const size = getQueryParamAsInt(req, 'size');
-  //   const sort = getQueryParamAsString(req, 'sort');
-  //   const order = getQueryParamAsString(req, 'order');
-  //   const filters = req.query.filters !== undefined ? JSON.parse(req.query.filters as string) : undefined;
-  //   const sellStates = await this.storyService.getSellStates(page, size, sort, order as 'ASC' | 'DESC', filters);
-  //   res.status(200).send(sellStates);
-  // }
+  @RequestMapping('/reward/chapter')
+  getChapterReward(req: Request, res: Response): void {
+    this.storyService.getAllChapterReward();
+    res.status(200).send();
+  }
 
-  // @RequestMapping('/status/check')
-  // async checkSellStates(req: Request, res: Response): Promise<void> {
-  //   await this.storyService.checkSellStates();
-  //   res.status(200).send();
-  // }
+  @RequestMapping('/reward/point')
+  getPointReward(req: Request, res: Response): void {
+    this.storyService.getAllPointReward();
+    res.status(200).send();
+  }
 }

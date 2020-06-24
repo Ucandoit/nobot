@@ -1,6 +1,8 @@
-import { makeRequest, NOBOT_URL, regexUtils, Service } from '@nobot-core/commons';
+import { executeConcurrent, makeRequest, NOBOT_URL, regexUtils, Service } from '@nobot-core/commons';
+import { Account } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { clearInterval } from 'timers';
+import { Connection, MoreThan, Repository } from 'typeorm';
 import StoryTask from './story-task';
 
 @Service()
@@ -8,6 +10,12 @@ export default class StoryService {
   private logger = getLogger(StoryService.name);
 
   private tasks: StoryTask[] = [];
+
+  private accountRepository: Repository<Account>;
+
+  constructor(connection: Connection) {
+    this.accountRepository = connection.getRepository<Account>('Account');
+  }
 
   start = async (login: string, extraTicket = 0, mode = 'medium', seconds = 150): Promise<void> => {
     let task = this.tasks.find((t) => t.getLogin() === login);
@@ -35,6 +43,38 @@ export default class StoryService {
         task.setInterval(null);
       }
     }
+  };
+
+  getAllChapterReward = async (): Promise<void> => {
+    const accounts = await this.accountRepository.find({
+      where: {
+        expirationDate: MoreThan(new Date())
+      },
+      order: {
+        login: 'ASC'
+      }
+    });
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      this.getChapterReward,
+      5
+    );
+  };
+
+  getAllPointReward = async (): Promise<void> => {
+    const accounts = await this.accountRepository.find({
+      where: {
+        expirationDate: MoreThan(new Date())
+      },
+      order: {
+        login: 'ASC'
+      }
+    });
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      this.getPointReward,
+      5
+    );
   };
 
   private checkFight = async (login: string): Promise<void> => {
@@ -224,5 +264,34 @@ export default class StoryService {
     )) as CheerioStatic;
     const form = page('#form');
     await makeRequest(NOBOT_URL.MANAGE_DECK, 'POST', login, form.serialize());
+  };
+
+  private getChapterReward = async (login: string): Promise<void> => {
+    await this.getReward(login, NOBOT_URL.CATTALE_CHAPTER_REWARD);
+  };
+
+  private getPointReward = async (login: string): Promise<void> => {
+    await this.getReward(login, NOBOT_URL.CATTALE_POINT_REWARD);
+  };
+
+  private getReward = async (login: string, url: string): Promise<void> => {
+    this.logger.info('Get cattale reward for %s.', login);
+    const page = (await makeRequest(url, 'GET', login)) as CheerioStatic;
+    const forms = page('#content table form');
+    const postDatas: string[] = [];
+    for (let i = 0; i < forms.length; i++) {
+      const form = forms.eq(i);
+      postDatas.push(form.serialize());
+    }
+    executeConcurrent(postDatas, this.claimReward, 1, url, login);
+  };
+
+  private claimReward = async (postData: string, url: string, login: string): Promise<void> => {
+    const location = await makeRequest(url, 'POST', login, postData);
+    if (typeof location === 'string' && location.includes('get_cattale_rental_card')) {
+      this.logger.info('Choose card reward for %s.', login);
+      const [nextUrl, params] = location.split('?');
+      await makeRequest(nextUrl, 'POST', login, params);
+    }
   };
 }
