@@ -24,4 +24,7 @@ export default class Account {
     length: 255
   })
   recruitId: string | null;
+
+  @Column('boolean', { name: 'mobile', default: () => 'false' })
+  mobile: boolean;
 }

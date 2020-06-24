@@ -36,6 +36,7 @@ services:
       - /usr/src/app/packages/api/card
       - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/api/story
+      - /usr/src/app/packages/api/tutorial
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
@@ -56,6 +57,7 @@ services:
       - /usr/src/app/packages/api/account-manager
       - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/api/story
+      - /usr/src/app/packages/api/tutorial
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
@@ -76,6 +78,7 @@ services:
       - /usr/src/app/packages/api/card
       - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/api/story
+      - /usr/src/app/packages/api/tutorial
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
@@ -96,6 +99,7 @@ services:
       - /usr/src/app/packages/api/card
       - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/api/story
+      - /usr/src/app/packages/api/tutorial
       - /usr/src/app/packages/tools
       - .:/usr/src/app
     ports:
@@ -120,6 +124,27 @@ services:
       - .:/usr/src/app
     ports:
       - '4005:3000'
+    environment:
+      CONFIG_PROFILE: ${CONFIG_PROFILE}
+  tutorial:
+    build:
+      context: ./
+      dockerfile: ./packages/api/tutorial/Dockerfile.dev
+    volumes:
+      - /usr/src/app/node_modules
+      - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/api/tutorial/node_modules
+      - /usr/src/app/packages/api/account-manager
+      - /usr/src/app/packages/api/auction
+      - /usr/src/app/packages/api/auction-sniping
+      - /usr/src/app/packages/api/card
+      - /usr/src/app/packages/api/sample
+      - /usr/src/app/packages/api/story
+      - /usr/src/app/packages/tools
+      - .:/usr/src/app
+    ports:
+      - '4006:3000'
     environment:
       CONFIG_PROFILE: ${CONFIG_PROFILE}
 volumes:
