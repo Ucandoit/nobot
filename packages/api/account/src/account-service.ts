@@ -1,17 +1,16 @@
 import { makeRequest, NOBOT_URL, Service } from '@nobot-core/commons';
-import { Account } from '@nobot-core/database';
+import { Account, AccountRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
-import { Repository } from 'typeorm';
 import { Connection } from 'typeorm/connection/Connection';
 
 @Service()
 export default class AccountService {
   private logger = getLogger(AccountService.name);
 
-  private accountRepository: Repository<Account>;
+  private accountRepository: AccountRepository;
 
   constructor(connection: Connection) {
-    this.accountRepository = connection.getRepository<Account>('Account');
+    this.accountRepository = connection.getCustomRepository(AccountRepository);
   }
 
   getAll = (): Promise<Account[]> => {
@@ -20,6 +19,15 @@ export default class AccountService {
         login: 'ASC'
       }
     });
+  };
+
+  getLastMobileAccount = async (): Promise<string> => {
+    const account = await this.accountRepository.getLastMobileAccount();
+    return account.login;
+  };
+
+  create = (account: Partial<Account>): Promise<Account> => {
+    return this.accountRepository.save(account);
   };
 
   refineQuest = async (login: string): Promise<void> => {

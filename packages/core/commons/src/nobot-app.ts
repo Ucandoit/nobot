@@ -1,4 +1,5 @@
 import initConnection from '@nobot-core/database';
+import bodyParser from 'body-parser';
 import express from 'express';
 import glob from 'glob';
 import { Container } from 'inversify';
@@ -54,6 +55,7 @@ export default class NobotApp {
     container.bind<Connection>(Connection).toConstantValue(connection);
 
     const app = express();
+    app.use(bodyParser.json());
 
     const files = glob
       .sync('{*.@(js|ts),**/*.@(js|ts)}', { cwd: this.scanDir })

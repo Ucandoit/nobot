@@ -1,4 +1,4 @@
-import { Controller, RequestMapping } from '@nobot-core/commons';
+import { Controller, HttpMethod, RequestMapping } from '@nobot-core/commons';
 import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import AccountInfoService from './account-info-service';
@@ -13,6 +13,18 @@ export default class CardController {
   @RequestMapping('/')
   async getAll(req: Request, res: Response): Promise<void> {
     res.status(200).send(await this.accountService.getAll());
+  }
+
+  @RequestMapping('/lastMobile')
+  async getLastMobileAccount(req: Request, res: Response): Promise<void> {
+    const account = await this.accountService.getLastMobileAccount();
+    res.status(200).send(account);
+  }
+
+  @RequestMapping('/create', [HttpMethod.POST])
+  async create(req: Request, res: Response): Promise<void> {
+    const account = await this.accountService.create(req.body);
+    res.status(201).send(account);
   }
 
   @RequestMapping('/:login/reserveCards')
