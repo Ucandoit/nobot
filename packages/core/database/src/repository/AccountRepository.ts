@@ -11,4 +11,15 @@ export default class CardRepository extends Repository<Account> {
       .take(1);
     return query.getRawOne();
   };
+
+  getMobileAccounts = (): Promise<Account[]> => {
+    return this.find({
+      where: {
+        mobile: true
+      },
+      order: {
+        login: 'ASC'
+      }
+    });
+  };
 }

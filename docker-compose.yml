@@ -32,6 +32,7 @@ services:
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/auction-sniping/node_modules
       - /usr/src/app/packages/api/account
+      - /usr/src/app/packages/api/action
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/card
       - /usr/src/app/packages/api/sample
@@ -52,9 +53,10 @@ services:
       - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/card/node_modules
+      - /usr/src/app/packages/api/account
+      - /usr/src/app/packages/api/action
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/auction-sniping
-      - /usr/src/app/packages/api/account
       - /usr/src/app/packages/api/sample
       - /usr/src/app/packages/api/story
       - /usr/src/app/packages/api/tutorial
@@ -73,6 +75,7 @@ services:
       - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/account/node_modules
+      - /usr/src/app/packages/api/action
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/api/card
@@ -95,6 +98,7 @@ services:
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/auction/node_modules
       - /usr/src/app/packages/api/account
+      - /usr/src/app/packages/api/action
       - /usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/api/card
       - /usr/src/app/packages/api/sample
@@ -116,6 +120,7 @@ services:
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/story/node_modules
       - /usr/src/app/packages/api/account
+      - /usr/src/app/packages/api/action
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/api/card
@@ -136,6 +141,7 @@ services:
       - /usr/src/app/packages/core/commons/node_modules
       - /usr/src/app/packages/api/tutorial/node_modules
       - /usr/src/app/packages/api/account
+      - /usr/src/app/packages/api/action
       - /usr/src/app/packages/api/auction
       - /usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/api/card
@@ -145,6 +151,22 @@ services:
       - .:/usr/src/app
     ports:
       - '4006:3000'
+    environment:
+      CONFIG_PROFILE: ${CONFIG_PROFILE}
+  action:
+    build:
+      context: ./
+      dockerfile: ./packages/api/action/Dockerfile.dev
+    volumes:
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/action:/usr/src/app/packages/api/action
+      - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/api/action/node_modules
+    ports:
+      - '4007:3000'
     environment:
       CONFIG_PROFILE: ${CONFIG_PROFILE}
 volumes:

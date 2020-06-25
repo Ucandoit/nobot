@@ -1,0 +1,11 @@
+FROM node:alpine
+
+WORKDIR /usr/src/app
+
+COPY package.json yarn.lock tsconfig.base.json ./
+COPY packages/core/database/package.json packages/core/database/package.json
+COPY packages/core/commons/package.json packages/core/commons/package.json
+COPY packages/api/action/package.json packages/api/action/package.json
+RUN yarn workspace @nobot-api/action install
+
+CMD [ "npm", "run", "--prefix", "packages/api/action", "dev" ]

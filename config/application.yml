@@ -25,3 +25,7 @@ projectName: api_card
 ---
   projectName: api_tutorial
   <<: !config config
+
+---
+  projectName: api_action
+  <<: !config config
