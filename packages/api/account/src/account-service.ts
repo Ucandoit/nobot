@@ -1,19 +1,25 @@
-import { makeRequest, NOBOT_URL } from '@nobot-core/commons';
+import { makeRequest, NOBOT_URL, Service } from '@nobot-core/commons';
 import { Account } from '@nobot-core/database';
 import { getLogger } from 'log4js';
-import { getConnection } from 'typeorm';
+import { Repository } from 'typeorm';
+import { Connection } from 'typeorm/connection/Connection';
 
-class AccountService {
+@Service()
+export default class AccountService {
   private logger = getLogger(AccountService.name);
 
+  private accountRepository: Repository<Account>;
+
+  constructor(connection: Connection) {
+    this.accountRepository = connection.getRepository<Account>('Account');
+  }
+
   getAll = (): Promise<Account[]> => {
-    return getConnection()
-      .getRepository<Account>('Account')
-      .find({
-        order: {
-          login: 'ASC'
-        }
-      });
+    return this.accountRepository.find({
+      order: {
+        login: 'ASC'
+      }
+    });
   };
 
   refineQuest = async (login: string): Promise<void> => {
@@ -83,5 +89,3 @@ class AccountService {
     return materialCardIds;
   };
 }
-
-export default new AccountService();

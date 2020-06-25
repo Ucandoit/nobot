@@ -3,7 +3,7 @@ projectName: api_auction_sniping
 <<: !config config
 
 ---
-projectName: api_account_manager
+projectName: api_account
 <<: !config config
 
 ---

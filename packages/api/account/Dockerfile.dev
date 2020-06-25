@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 COPY package.json yarn.lock ./
 COPY packages/core/database/package.json packages/core/database/package.json
 COPY packages/core/commons/package.json packages/core/commons/package.json
-COPY packages/api/account-manager/package.json packages/api/account-manager/package.json
-RUN yarn workspace @nobot-api/account-manager install
+COPY packages/api/account/package.json packages/api/account/package.json
+RUN yarn workspace @nobot-api/account install
 
-CMD [ "npm", "run", "--prefix", "packages/api/account-manager", "dev" ]
+CMD [ "npm", "run", "--prefix", "packages/api/account", "dev" ]

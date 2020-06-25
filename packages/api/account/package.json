@@ -1,13 +1,12 @@
 {
-  "name": "@nobot-api/account-manager",
+  "name": "@nobot-api/account",
   "version": "0.1.0",
   "private": true,
-  "description": "Nobot account manager module",
+  "description": "Nobot account module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "tsc -b ./tsconfig.build.json",
-    "watch": "tsc -b ./tsconfig.build.json --watch",
+    "build": "rimraf lib && tsc -b --force ./tsconfig.build.json",
     "dev": "nodemon",
     "start": "node ./lib/index.js"
   },
@@ -19,6 +18,7 @@
     "@nobot-core/commons": "0.1.0",
     "@nobot-core/database": "0.1.0",
     "express": "^4.17.1",
+    "inversify": "^5.0.1",
     "log4js": "^6.2.1",
     "typeorm": "^0.2.24"
   },

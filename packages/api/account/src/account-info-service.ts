@@ -1,7 +1,8 @@
-import { makeRequest, NOBOT_URL, regexUtils } from '@nobot-core/commons';
+import { makeRequest, NOBOT_URL, regexUtils, Service } from '@nobot-core/commons';
 import { getLogger } from 'log4js';
 
-class AccountInfoService {
+@Service()
+export default class AccountInfoService {
   private logger = getLogger(AccountInfoService.name);
 
   getReserveCards = async (login: string): Promise<CardInfo[]> => {
@@ -33,5 +34,3 @@ class AccountInfoService {
     return [];
   };
 }
-
-export default new AccountInfoService();

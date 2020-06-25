@@ -8,8 +8,8 @@ COPY yarn.lock .
 
 COPY packages/core/database/package.json ./packages/core/database/package.json
 COPY packages/core/commons/package.json ./packages/core/commons/package.json
-COPY packages/api/account-manager/package.json ./packages/api/account-manager/package.json
-RUN yarn workspace @nobot-api/account-manager install
+COPY packages/api/account/package.json ./packages/api/account/package.json
+RUN yarn workspace @nobot-api/account install
 
 FROM node:alpine
 ENV NODE_ENV production
@@ -24,18 +24,18 @@ COPY config/config-prod.yml ./config/config-prod.yml
 
 COPY packages/core/database/package.json ./packages/core/database/package.json
 COPY packages/core/commons/package.json ./packages/core/commons/package.json
-COPY packages/api/account-manager/package.json ./packages/api/account-manager/package.json
+COPY packages/api/account/package.json ./packages/api/account/package.json
 
 COPY packages/core/database/lib ./packages/core/database/lib
 COPY packages/core/commons/lib ./packages/core/commons/lib
-COPY packages/api/account-manager/lib ./packages/api/account-manager/lib
+COPY packages/api/account/lib ./packages/api/account/lib
 
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 
 COPY --from=builder /usr/src/app/packages/core/database/node_modules ./packages/core/database/node_modules
 COPY --from=builder /usr/src/app/packages/core/commons/node_modules ./packages/core/commons/node_modules
-COPY --from=builder /usr/src/app/packages/api/account-manager/node_modules ./packages/api/account-manager/node_modules
+COPY --from=builder /usr/src/app/packages/api/account/node_modules ./packages/api/account/node_modules
 
-WORKDIR /usr/src/app/packages/api/account-manager
+WORKDIR /usr/src/app/packages/api/account
 
 CMD ["npm", "run", "start"]
