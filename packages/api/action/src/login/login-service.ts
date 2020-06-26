@@ -1,4 +1,4 @@
-import { executeConcurrent, makeMobileRequest, NOBOT_MOBILE_URL, Service } from '@nobot-core/commons';
+import { executeConcurrent, getFinalPage, NOBOT_MOBILE_URL, Service } from '@nobot-core/commons';
 import { AccountRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm/connection/Connection';
@@ -27,19 +27,10 @@ export default class LoginService {
   dailyLogin = async (login: string): Promise<void> => {
     this.logger.info('Daily login for %s.', login);
     try {
-      await this.getFinalPage(login, NOBOT_MOBILE_URL.WORLD_LIST);
+      await getFinalPage(NOBOT_MOBILE_URL.WORLD_LIST, login);
     } catch (err) {
       this.logger.error('Error while daily login for %s', login);
       this.logger.error(err);
     }
-  };
-
-  private getFinalPage = async (login: string, url: string, needPrefix = true): Promise<CheerioStatic> => {
-    const page = await makeMobileRequest(url, login, needPrefix);
-    const nextUrl = page('#sp_sc_5').attr('href');
-    if (nextUrl) {
-      return this.getFinalPage(login, nextUrl, false);
-    }
-    return page;
   };
 }

@@ -2,6 +2,7 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import { post } from 'superagent';
 import NOBOT_MOBILE_URL from './nobot-mobile-url';
+import regexUtils from './regex-utils';
 import { jsonParser } from './response-parser';
 import tokenManager from './token-manager';
 
@@ -68,4 +69,18 @@ export const makePostMobileRequest = async (
     }
   });
   return cheerio.load(res.data);
+};
+
+export const getFinalPage = async (url: string, login: string, needPrefix = true): Promise<CheerioStatic> => {
+  const page = await makeMobileRequest(url, login, needPrefix);
+  const nextUrl = page('#sp_sc_5').attr('href');
+  if (nextUrl) {
+    return getFinalPage(nextUrl, login, false);
+  }
+  const redirectUrl = regexUtils.catchByRegex(page.html(), /(?<=nextURL = ").+(?=")/) as string;
+  if (redirectUrl) {
+    return getFinalPage(redirectUrl, login, false);
+  }
+
+  return page;
 };
