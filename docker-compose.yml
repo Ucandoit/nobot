@@ -27,19 +27,13 @@ services:
       context: ./
       dockerfile: ./packages/api/auction-sniping/Dockerfile.dev
     volumes:
-      - /usr/src/app/node_modules
-      - /usr/src/app/packages/core/database/node_modules
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/auction-sniping:/usr/src/app/packages/api/auction-sniping
       - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/api/auction-sniping/node_modules
-      - /usr/src/app/packages/api/account
-      - /usr/src/app/packages/api/action
-      - /usr/src/app/packages/api/auction
-      - /usr/src/app/packages/api/card
-      - /usr/src/app/packages/api/sample
-      - /usr/src/app/packages/api/story
-      - /usr/src/app/packages/api/tutorial
-      - /usr/src/app/packages/tools
-      - .:/usr/src/app
     ports:
       - '4001:3000'
     environment:
@@ -49,19 +43,13 @@ services:
       context: ./
       dockerfile: ./packages/api/card/Dockerfile.dev
     volumes:
-      - /usr/src/app/node_modules
-      - /usr/src/app/packages/core/database/node_modules
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/card:/usr/src/app/packages/api/card
       - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/api/card/node_modules
-      - /usr/src/app/packages/api/account
-      - /usr/src/app/packages/api/action
-      - /usr/src/app/packages/api/auction
-      - /usr/src/app/packages/api/auction-sniping
-      - /usr/src/app/packages/api/sample
-      - /usr/src/app/packages/api/story
-      - /usr/src/app/packages/api/tutorial
-      - /usr/src/app/packages/tools
-      - .:/usr/src/app
     ports:
       - '4002:3000'
     environment:
@@ -71,19 +59,13 @@ services:
       context: ./
       dockerfile: ./packages/api/account/Dockerfile.dev
     volumes:
-      - /usr/src/app/node_modules
-      - /usr/src/app/packages/core/database/node_modules
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/account:/usr/src/app/packages/api/account
       - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/api/account/node_modules
-      - /usr/src/app/packages/api/action
-      - /usr/src/app/packages/api/auction
-      - /usr/src/app/packages/api/auction-sniping
-      - /usr/src/app/packages/api/card
-      - /usr/src/app/packages/api/sample
-      - /usr/src/app/packages/api/story
-      - /usr/src/app/packages/api/tutorial
-      - /usr/src/app/packages/tools
-      - .:/usr/src/app
     ports:
       - '4003:3000'
     environment:
@@ -93,19 +75,13 @@ services:
       context: ./
       dockerfile: ./packages/api/auction/Dockerfile.dev
     volumes:
-      - /usr/src/app/node_modules
-      - /usr/src/app/packages/core/database/node_modules
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/auction:/usr/src/app/packages/api/auction
       - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/api/auction/node_modules
-      - /usr/src/app/packages/api/account
-      - /usr/src/app/packages/api/action
-      - /usr/src/app/packages/api/auction-sniping
-      - /usr/src/app/packages/api/card
-      - /usr/src/app/packages/api/sample
-      - /usr/src/app/packages/api/story
-      - /usr/src/app/packages/api/tutorial
-      - /usr/src/app/packages/tools
-      - .:/usr/src/app
     ports:
       - '4004:3000'
     environment:
@@ -115,18 +91,13 @@ services:
       context: ./
       dockerfile: ./packages/api/story/Dockerfile.dev
     volumes:
-      - /usr/src/app/node_modules
-      - /usr/src/app/packages/core/database/node_modules
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/story:/usr/src/app/packages/api/story
       - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/api/story/node_modules
-      - /usr/src/app/packages/api/account
-      - /usr/src/app/packages/api/action
-      - /usr/src/app/packages/api/auction
-      - /usr/src/app/packages/api/auction-sniping
-      - /usr/src/app/packages/api/card
-      - /usr/src/app/packages/api/sample
-      - /usr/src/app/packages/tools
-      - .:/usr/src/app
     ports:
       - '4005:3000'
     environment:
@@ -136,19 +107,13 @@ services:
       context: ./
       dockerfile: ./packages/api/tutorial/Dockerfile.dev
     volumes:
-      - /usr/src/app/node_modules
-      - /usr/src/app/packages/core/database/node_modules
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/tutorial:/usr/src/app/packages/api/tutorial
       - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
       - /usr/src/app/packages/api/tutorial/node_modules
-      - /usr/src/app/packages/api/account
-      - /usr/src/app/packages/api/action
-      - /usr/src/app/packages/api/auction
-      - /usr/src/app/packages/api/auction-sniping
-      - /usr/src/app/packages/api/card
-      - /usr/src/app/packages/api/sample
-      - /usr/src/app/packages/api/story
-      - /usr/src/app/packages/tools
-      - .:/usr/src/app
     ports:
       - '4006:3000'
     environment:
