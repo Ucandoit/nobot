@@ -74,7 +74,7 @@ export default class BuildingService {
     const accounts = await this.accountRepository.getMobileAccounts();
     await executeConcurrent(
       accounts.map((account) => account.login),
-      this.startBuild,
+      this.start,
       10
     );
   };
@@ -87,7 +87,7 @@ export default class BuildingService {
       task = { stop: false };
       this.buildTasks.set(login, task);
       this.logger.info('Start to build for %s', login);
-      this.startBuild(login);
+      await this.startBuild(login);
     }
   };
 

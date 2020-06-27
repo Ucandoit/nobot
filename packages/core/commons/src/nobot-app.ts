@@ -17,6 +17,8 @@ export default class NobotApp {
 
   private scanDir: string;
 
+  private container: Container;
+
   constructor(name: string, scanDir: string) {
     this.name = name;
     this.scanDir = scanDir;
@@ -51,8 +53,8 @@ export default class NobotApp {
     this.logger.info('init postgres.');
     const connection = await initConnection(database);
 
-    const container = new Container();
-    container.bind<Connection>(Connection).toConstantValue(connection);
+    this.container = new Container();
+    this.container.bind<Connection>(Connection).toConstantValue(connection);
 
     const app = express();
     app.use(bodyParser.json());
@@ -72,7 +74,7 @@ export default class NobotApp {
         const m = modules[key];
 
         if (Reflect.hasMetadata(METADATA_KEY.AUTOWIRED, m)) {
-          container.bind(m).toSelf().inSingletonScope();
+          this.container.bind(m).toSelf().inSingletonScope();
 
           if (Reflect.hasMetadata(METADATA_KEY.BASE_PATH, m) && Reflect.hasMetadata(METADATA_KEY.ROUTES, m)) {
             controllers.push(m);
@@ -83,7 +85,7 @@ export default class NobotApp {
 
     controllers.forEach((controller) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const instance: any = container.get(controller);
+      const instance: any = this.container.get(controller);
       const basePath = Reflect.getMetadata(METADATA_KEY.BASE_PATH, controller);
       const routes: Array<RouteDefinition> = Reflect.getMetadata(METADATA_KEY.ROUTES, controller);
       routes.forEach((route) => {
@@ -97,4 +99,6 @@ export default class NobotApp {
       this.logger.info('%s started at port 3000', this.name);
     });
   };
+
+  getContainer = (): Container => this.container;
 }
