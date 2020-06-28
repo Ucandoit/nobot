@@ -19,4 +19,9 @@ export default class BuildingController {
     this.buildingService.start(login);
     res.status(200).send();
   }
+
+  @RequestMapping('/status')
+  status(req: Request, res: Response): void {
+    res.status(200).send(this.buildingService.status());
+  }
 }

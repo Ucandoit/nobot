@@ -1,4 +1,4 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { EntityRepository, MoreThan, Repository } from 'typeorm';
 import { Account } from '../entities';
 
 @EntityRepository(Account)
@@ -15,6 +15,7 @@ export default class CardRepository extends Repository<Account> {
   getMobileAccounts = (): Promise<Account[]> => {
     return this.find({
       where: {
+        expirationDate: MoreThan(new Date()),
         mobile: true
       },
       order: {

@@ -36,7 +36,8 @@ export default class CardService {
   scanAllStoredCards = async (): Promise<void> => {
     const accounts = await this.accountRepository.find({
       where: {
-        expirationDate: MoreThan(new Date())
+        expirationDate: MoreThan(new Date()),
+        mobile: false
       },
       order: {
         login: 'ASC'
@@ -64,7 +65,8 @@ export default class CardService {
   scanAllAccountCards = async (): Promise<void> => {
     const accounts = await this.accountRepository.find({
       where: {
-        expirationDate: MoreThan(new Date())
+        expirationDate: MoreThan(new Date()),
+        mobile: false
       },
       order: {
         login: 'ASC'

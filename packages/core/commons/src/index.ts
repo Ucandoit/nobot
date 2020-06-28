@@ -4,6 +4,7 @@ export { default as NobotApp } from './nobot-app';
 export { default as NOBOT_MOBILE_URL } from './nobot-mobile-url';
 export * from './nobot-request';
 export { default as NOBOT_URL } from './nobot-url';
+export { default as nobotUtils } from './nobot-utils';
 export { default as redisClient } from './redis-client';
 export { default as regexUtils } from './regex-utils';
 export * from './response-parser';

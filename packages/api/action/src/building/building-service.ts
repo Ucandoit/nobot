@@ -1,5 +1,13 @@
-import { executeConcurrent, getFinalPage, makePostMobileRequest, NOBOT_MOBILE_URL, Service } from '@nobot-core/commons';
+import {
+  executeConcurrent,
+  getFinalPage,
+  makePostMobileRequest,
+  nobotUtils,
+  NOBOT_MOBILE_URL,
+  Service
+} from '@nobot-core/commons';
 import { AccountRepository } from '@nobot-core/database';
+import he from 'he';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm/connection/Connection';
 import { ResourceCost } from '../tyoes';
@@ -38,7 +46,7 @@ interface BuildTarget {
 }
 
 interface BuildTask {
-  stop: boolean;
+  start: boolean;
   interval?: NodeJS.Timeout;
 }
 
@@ -80,12 +88,11 @@ export default class BuildingService {
   };
 
   start = async (login: string): Promise<void> => {
-    let task = this.buildTasks.get(login);
-    if (task && !task.stop) {
+    const task = this.buildTasks.get(login);
+    if (task && task.start) {
       this.logger.info('Build task is already in progress for %s', login);
     } else {
-      task = { stop: false };
-      this.buildTasks.set(login, task);
+      this.buildTasks.set(login, { start: true });
       this.logger.info('Start to build for %s', login);
       await this.startBuild(login);
     }
@@ -100,11 +107,33 @@ export default class BuildingService {
     this.buildTasks.delete(login);
   };
 
+  status = (): { login: string; start: boolean }[] => {
+    const status: { login: string; start: boolean }[] = [];
+    this.buildTasks.forEach((buildTask, login) => {
+      console.log(buildTask, login);
+      status.push({ login, start: buildTask.start });
+    });
+    return status;
+  };
+
   startBuild = async (login: string): Promise<void> => {
     const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
-    const commandInfo = page('#sp_village_command_info');
-    if (commandInfo.length > 0 && (commandInfo.html()?.includes('建設中') || commandInfo.html()?.includes('増築中'))) {
+    const commandInfo = page('.sp_village_command_info');
+    if (
+      commandInfo.length > 0 &&
+      (commandInfo.html()?.includes(he.encode('建設中')) || commandInfo.html()?.includes(he.encode('増築中')))
+    ) {
       this.logger.info('Build action is still in progress for %s.', login);
+      const seconds = nobotUtils.getSeconds(commandInfo.find('#cmd_00').text());
+      this.logger.info('Wait %d seconds to complete for %s', seconds, login);
+      const interval = setTimeout(() => {
+        this.startBuild(login);
+      }, seconds * 1000);
+      const task = this.buildTasks.get(login) as BuildTask;
+      this.buildTasks.set(login, {
+        ...task,
+        interval
+      });
     } else {
       const areas = this.getMapInfo(page);
       const elementInfo = this.getElementInfo(page);
@@ -171,7 +200,7 @@ export default class BuildingService {
         const task = this.buildTasks.get(login) as BuildTask;
         this.buildTasks.set(login, {
           ...task,
-          stop: true
+          start: false
         });
       }
     }
