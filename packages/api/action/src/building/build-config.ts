@@ -1,16 +1,21 @@
 import { getLogger } from 'log4js';
-import { ResourceCost } from '../tyoes';
+import { Building, ResourceCost } from '../types';
 
 class BuildConfig {
   private logger = getLogger(BuildConfig.name);
 
   private buildCostMap: Map<string, Map<number, ResourceCost>>;
 
+  private buildingList: Building[];
+
   constructor() {
     this.constructBuildCostMap();
+    this.constructBuildingList();
   }
 
   getBuildCostMap = (): Map<string, Map<number, ResourceCost>> => this.buildCostMap;
+
+  getBuildingList = (): Building[] => this.buildingList;
 
   private constructBuildCostMap = (): void => {
     this.logger.info('Initializing build cost map.');
@@ -181,6 +186,22 @@ class BuildConfig {
     map.set(7, { fire: 0, earth: 324, wind: 0, water: 518, sky: 1294, seconds: 902 * 60, reducedSeconds: 902 * 10 });
     map.set(8, { fire: 0, earth: 460, wind: 0, water: 736, sky: 1838, seconds: 1388 * 60, reducedSeconds: 1388 * 10 });
     return map;
+  };
+
+  private constructBuildingList = (): void => {
+    this.buildingList = [];
+    this.buildingList.push({ type: 'type02', title: '宝物庫', facility: 'storage' });
+    this.buildingList.push({ type: 'type16', title: '兵糧庫', facility: 'food' });
+    this.buildingList.push({ type: 'type17', title: '水田', facility: 'paddy' });
+    this.buildingList.push({ type: 'type03', title: '修練場【火】', facility: 'fire' });
+    this.buildingList.push({ type: 'type04', title: '修練場【地】', facility: 'earth' });
+    this.buildingList.push({ type: 'type05', title: '修練場【風】', facility: 'wind' });
+    this.buildingList.push({ type: 'type06', title: '修練場【水】', facility: 'water' });
+    this.buildingList.push({ type: 'type07', title: '修練場【空】', facility: 'sky' });
+    this.buildingList.push({ type: 'type09', title: '奥義開発所', facility: 'dev_basic' });
+    this.buildingList.push({ type: 'type13', title: '楽市楽座', facility: 'market' });
+    this.buildingList.push({ type: 'type01', title: '館', facility: 'home_basic' });
+    this.buildingList.push({ type: 'type00', title: '空き地', facility: 'free' });
   };
 }
 

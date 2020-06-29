@@ -1,6 +1,6 @@
 import { NobotApp } from '@nobot-core/commons';
-// import BuildingService from './building/building-service';
 import { scheduleJob } from 'node-schedule';
+// import BuildingService from './building/building-service';
 import LoginService from './login/login-service';
 
 (async function startApp(): Promise<void> {
