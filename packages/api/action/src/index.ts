@@ -1,5 +1,6 @@
 import { NobotApp } from '@nobot-core/commons';
 import { scheduleJob } from 'node-schedule';
+// import ManageCardService from './card/manage-card-service';
 // import BuildingService from './building/building-service';
 import LoginService from './login/login-service';
 
@@ -10,4 +11,6 @@ import LoginService from './login/login-service';
   // buildingService.start('zz0001');
   const loginService = nobotApp.getContainer().get(LoginService);
   scheduleJob('0 1 15 * * *', loginService.dailyLoginAll);
+  // const manageCardService = nobotApp.getContainer().get(ManageCardService);
+  // manageCardService.moveSampleCard();
 })();
