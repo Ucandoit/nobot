@@ -12,5 +12,5 @@ import LoginService from './login/login-service';
   const loginService = nobotApp.getContainer().get(LoginService);
   scheduleJob('0 1 15 * * *', loginService.dailyLoginAll);
   // const manageCardService = nobotApp.getContainer().get(ManageCardService);
-  // manageCardService.moveSampleCard();
+  // manageCardService.manageSampleDeck();
 })();
