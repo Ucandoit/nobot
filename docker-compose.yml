@@ -15,6 +15,7 @@ services:
       - nobot-pgdata:/var/lib/postgresql/data/pgdata
     ports:
       - '5433:5432'
+    restart: always
   nginx:
     build:
       context: ./nginx

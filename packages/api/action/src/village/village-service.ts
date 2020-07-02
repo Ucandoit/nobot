@@ -1,11 +1,17 @@
-import { getFinalPage, NOBOT_MOBILE_URL, Service } from '@nobot-core/commons';
+import { getFinalPage, NOBOT_MOBILE_URL, regexUtils, Service } from '@nobot-core/commons';
 import { getLogger } from 'log4js';
 import buildConfig from '../building/build-config';
 import { Building, MapArea, ResourceInfo } from '../types';
 
+interface CardFace {
+  id: number;
+  faceUrl: string;
+}
+
 interface VillageInfo {
   resourceInfo: ResourceInfo;
   areas: MapArea[];
+  deckCards: CardFace[];
 }
 
 @Service()
@@ -17,7 +23,8 @@ export default class VillageService {
     const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
     return {
       resourceInfo: this.getResourceInfo(page),
-      areas: this.getMapInfo(page)
+      areas: this.getMapInfo(page),
+      deckCards: this.getDeckCards(page)
     };
   };
 
@@ -59,5 +66,18 @@ export default class VillageService {
       maxFood: parseInt(page('#max_food').text(), 10),
       np: parseInt(page('span#lottery_point').text(), 10)
     };
+  };
+
+  getDeckCards = (page: CheerioStatic): CardFace[] => {
+    const deckCards: CardFace[] = [];
+    const cards = page('#pool_1 .reserve-face');
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards.eq(i);
+      deckCards.push({
+        id: regexUtils.catchByRegex(card.attr('class'), /(?<=face-card-id)[0-9]+/) as number,
+        faceUrl: card.children().first().attr('src') as string
+      });
+    }
+    return deckCards;
   };
 }

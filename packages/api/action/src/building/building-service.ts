@@ -121,17 +121,17 @@ export default class BuildingService {
       const elementInfo = this.villageService.getResourceInfo(page);
       const newUser = page('#new-player-button').length > 0;
       // find the facility to build by order
-
       this.logger.info('Trying to find build target for %s.', login);
       let buildTarget: BuildTarget | undefined;
       for (let i = 0; i < this.buildOrder.length; i++) {
         const { facility, max } = this.buildOrder[i];
+        let targetFacility = facility;
         let area: MapArea | undefined;
         const nb = areas.reduce(
           (count: number, a: MapArea) => (a.building && a.building.facility === facility ? count + 1 : count),
           0
         );
-        if (nb < max) {
+        if (nb < max && facility !== 'home_basic') {
           // get empty area to construct
           area = areas.find((a) => a.building && a.building.facility === 'free');
         } else {
@@ -144,16 +144,30 @@ export default class BuildingService {
               }
               return prev;
             }, undefined);
+          // special case for home building
+          if (area === undefined && facility === 'home_basic') {
+            area = areas.find(
+              (a) =>
+                !a.constructing &&
+                a.building &&
+                ((a.building.facility === 'home_basic' && a.level === 9) ||
+                  (a.building.facility === 'home_adv' && a.level < 9))
+            );
+            targetFacility = 'home_adv';
+          }
         }
         if (area) {
-          const buildCost = buildConfig.getBuildCostMap().get(facility)?.get(area.level) as ResourceCost;
+          const buildCost = buildConfig
+            .getBuildCostMap()
+            .get(targetFacility)
+            ?.get(area.level < 9 ? area.level : 0) as ResourceCost;
           if (this.costEnough(buildCost, elementInfo)) {
-            const type = buildConfig.getBuildingList().find((b) => b.facility === facility)?.type as string;
+            const type = buildConfig.getBuildingList().find((b) => b.facility === targetFacility)?.type as string;
             buildTarget = {
               type: parseInt(type.replace('type', ''), 10),
               mapId: parseInt(area.mapId.replace('map', ''), 10),
               upgrade: area.level !== 0,
-              facility,
+              facility: targetFacility,
               seconds: newUser ? buildCost.reducedSeconds : buildCost.seconds
             };
             break;

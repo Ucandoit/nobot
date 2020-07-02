@@ -30,6 +30,7 @@ class BuildConfig {
     this.buildCostMap.set('wind', this.getWindBuildCostMap());
     this.buildCostMap.set('water', this.getWaterBuildCostMap());
     this.buildCostMap.set('sky', this.getSkyBuildCostMap());
+    this.buildCostMap.set('home_adv', this.getHomeAdvBuildCostMap());
   };
 
   private getStorageBuildCostMap = (): Map<number, ResourceCost> => {
@@ -188,6 +189,92 @@ class BuildConfig {
     return map;
   };
 
+  private getHomeAdvBuildCostMap = (): Map<number, ResourceCost> => {
+    const map = new Map<number, ResourceCost>();
+    map.set(0, {
+      fire: 250,
+      earth: 250,
+      wind: 250,
+      water: 250,
+      sky: 250,
+      seconds: 10 * 60 * 60,
+      reducedSeconds: 10 * 60 * 10
+    });
+    map.set(1, {
+      fire: 340,
+      earth: 340,
+      wind: 340,
+      water: 340,
+      sky: 340,
+      seconds: 13 * 60 * 60,
+      reducedSeconds: 13 * 60 * 10
+    });
+    map.set(2, {
+      fire: 444,
+      earth: 444,
+      wind: 444,
+      water: 444,
+      sky: 444,
+      seconds: 16 * 60 * 60,
+      reducedSeconds: 16 * 60 * 10
+    });
+    map.set(3, {
+      fire: 564,
+      earth: 564,
+      wind: 564,
+      water: 564,
+      sky: 564,
+      seconds: 20 * 60 * 60,
+      reducedSeconds: 20 * 60 * 10
+    });
+    map.set(4, {
+      fire: 702,
+      earth: 702,
+      wind: 702,
+      water: 702,
+      sky: 702,
+      seconds: 24 * 60 * 60,
+      reducedSeconds: 24 * 60 * 10
+    });
+    map.set(5, {
+      fire: 860,
+      earth: 860,
+      wind: 860,
+      water: 860,
+      sky: 860,
+      seconds: 30 * 60 * 60,
+      reducedSeconds: 30 * 60 * 10
+    });
+    map.set(6, {
+      fire: 1040,
+      earth: 1040,
+      wind: 1040,
+      water: 1040,
+      sky: 1040,
+      seconds: 36 * 60 * 60,
+      reducedSeconds: 36 * 60 * 10
+    });
+    map.set(7, {
+      fire: 1244,
+      earth: 1244,
+      wind: 1244,
+      water: 1244,
+      sky: 1244,
+      seconds: 42 * 60 * 60,
+      reducedSeconds: 42 * 60 * 10
+    });
+    map.set(8, {
+      fire: 1474,
+      earth: 1474,
+      wind: 1474,
+      water: 1474,
+      sky: 1474,
+      seconds: 48 * 60 * 60,
+      reducedSeconds: 48 * 60 * 10
+    });
+    return map;
+  };
+
   private constructBuildingList = (): void => {
     this.buildingList = [];
     this.buildingList.push({ type: 'type02', title: '宝物庫', facility: 'storage' });
@@ -201,6 +288,7 @@ class BuildConfig {
     this.buildingList.push({ type: 'type09', title: '奥義開発所', facility: 'dev_basic' });
     this.buildingList.push({ type: 'type13', title: '楽市楽座', facility: 'market' });
     this.buildingList.push({ type: 'type01', title: '館', facility: 'home_basic' });
+    this.buildingList.push({ type: 'type18', title: '御殿', facility: 'home_adv' });
     this.buildingList.push({ type: 'type00', title: '空き地', facility: 'free' });
   };
 }
