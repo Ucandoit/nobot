@@ -38,3 +38,5 @@ export interface ResourceCost {
   seconds: number;
   reducedSeconds: number;
 }
+
+export type Training = 'fire' | 'earth' | 'wind' | 'water' | 'sky';

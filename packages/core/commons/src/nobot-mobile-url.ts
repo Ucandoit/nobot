@@ -15,6 +15,8 @@ export default {
   MANAGE_DECK_CARDS: 'http://210.140.157.168/mobile/card/mobile_manage_card.htm?status=1',
   MANAGE_STORED_CARDS: 'http://210.140.157.168/mobile/card/mobile_manage_card.htm?status=2',
   MANAGE_DECK: 'http://210.140.157.168/mobile/card/mobile_manage_deck.htm',
+  CARD_DETAIL: 'http://210.140.157.168/mobile/card/sub/mobile_get_card_detail.htm',
+  TRAINING: 'http://210.140.157.168/mobile/village/mobile_training_execute.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',
@@ -28,6 +30,5 @@ export default {
   NOTIFY_BONUS: 'http://210.140.157.168/cattale/cattale_bonus_notify.htm',
   REFINE_CARD: 'http://210.140.157.168/card/refine_card.htm',
   REFINE_CARD_SUB: 'http://210.140.157.168/card/sub/refine_card.htm',
-  CARD_DETAIL: 'http://210.140.157.168/card/sub/get_card_detail.htm',
   REWARD_CARD_DETAIL: 'http://210.140.157.168/card/sub/get_reward_card_detail.htm'
 };

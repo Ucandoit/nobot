@@ -107,6 +107,40 @@ export default class ManageCardService {
     this.logger.info('Deck changed for %s', login);
   };
 
+  findAccountCardByNumber = async (number: number, login: string): Promise<{ id: number; inDeck: boolean }> => {
+    let card = await this.findCardByNumber(number, login, true);
+    if (card.id === -1) {
+      card = await this.findCardByNumber(number, login, false);
+    }
+    return card;
+  };
+
+  private findCardByNumber = async (
+    number: number,
+    login: string,
+    inDeck: boolean
+  ): Promise<{ id: number; inDeck: boolean }> => {
+    const card = {
+      id: -1,
+      inDeck
+    };
+    const page = await makeMobileRequest(
+      inDeck ? NOBOT_MOBILE_URL.MANAGE_DECK_CARDS : NOBOT_MOBILE_URL.MANAGE_RESERVE_CARDS,
+      login
+    );
+    const checkboxes = page('input[name=ids]');
+    for (let i = 0; i < checkboxes.length; i++) {
+      const checkbox = checkboxes.eq(i);
+      const numberText = checkbox.parent().next().children().first().text();
+      if (number === parseInt(numberText.replace('No.', ''), 10)) {
+        card.id = parseInt(checkbox.val(), 10);
+        card.inDeck = true;
+        break;
+      }
+    }
+    return card;
+  };
+
   private moveCard = async (login: string, cardId: number): Promise<void> => {
     const page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_STORED_CARDS, login);
     const cardFace = page(`.face-card-id${cardId}`);

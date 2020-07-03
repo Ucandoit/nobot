@@ -1,7 +1,7 @@
 import { getFinalPage, NOBOT_MOBILE_URL, regexUtils, Service } from '@nobot-core/commons';
 import { getLogger } from 'log4js';
 import buildConfig from '../building/build-config';
-import { Building, MapArea, ResourceInfo } from '../types';
+import { Building, MapArea, ResourceCost, ResourceInfo } from '../types';
 
 interface CardFace {
   id: number;
@@ -79,5 +79,15 @@ export default class VillageService {
       });
     }
     return deckCards;
+  };
+
+  costEnough = (resourceCost: ResourceCost, resourceInfo: ResourceInfo): boolean => {
+    return (
+      resourceCost.fire <= resourceInfo.fire &&
+      resourceCost.earth <= resourceInfo.earth &&
+      resourceCost.wind <= resourceInfo.wind &&
+      resourceCost.water <= resourceInfo.water &&
+      resourceCost.sky <= resourceInfo.sky
+    );
   };
 }

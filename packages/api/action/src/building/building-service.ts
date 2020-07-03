@@ -11,7 +11,7 @@ import he from 'he';
 import { inject } from 'inversify';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm/connection/Connection';
-import { MapArea, ResourceCost, ResourceInfo } from '../types';
+import { MapArea, ResourceCost } from '../types';
 import VillageService from '../village/village-service';
 import buildConfig from './build-config';
 
@@ -161,7 +161,7 @@ export default class BuildingService {
             .getBuildCostMap()
             .get(targetFacility)
             ?.get(area.level < 9 ? area.level : 0) as ResourceCost;
-          if (this.costEnough(buildCost, elementInfo)) {
+          if (this.villageService.costEnough(buildCost, elementInfo)) {
             const type = buildConfig.getBuildingList().find((b) => b.facility === targetFacility)?.type as string;
             buildTarget = {
               type: parseInt(type.replace('type', ''), 10),
@@ -201,15 +201,5 @@ export default class BuildingService {
         });
       }
     }
-  };
-
-  private costEnough = (buildCost: ResourceCost, resourceInfo: ResourceInfo): boolean => {
-    return (
-      buildCost.fire <= resourceInfo.fire &&
-      buildCost.earth <= resourceInfo.earth &&
-      buildCost.wind <= resourceInfo.wind &&
-      buildCost.water <= resourceInfo.water &&
-      buildCost.sky <= resourceInfo.sky
-    );
   };
 }
