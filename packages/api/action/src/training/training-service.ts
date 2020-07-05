@@ -47,11 +47,27 @@ export default class TrainingService {
       async (login: string) => {
         const atkCard = await this.manageCardService.findAccountCardByNumber(2088, login);
         if (atkCard.id > 0) {
-          this.start(login, atkCard.id, 'fire');
+          const cardInfo = await this.getCardInfo(atkCard.id, login);
+          let training: Training = 'fire';
+          if (cardInfo.fire === 20) {
+            training = 'earth';
+            if (cardInfo.earth === 20) {
+              training = 'wind';
+            }
+          }
+          this.start(login, atkCard.id, training);
         }
         const healCard = await this.manageCardService.findAccountCardByNumber(2103, login);
         if (healCard.id > 0) {
-          this.start(login, healCard.id, 'water');
+          const cardInfo = await this.getCardInfo(healCard.id, login);
+          let training: Training = 'water';
+          if (cardInfo.water === 20) {
+            training = 'sky';
+            if (cardInfo.sky === 20) {
+              training = 'earth';
+            }
+          }
+          this.start(login, healCard.id, training);
         }
       },
       10
