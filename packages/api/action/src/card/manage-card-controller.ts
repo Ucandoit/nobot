@@ -18,4 +18,10 @@ export default class ManageCardController {
     this.manageCardService.moveSampleCard();
     res.status(200).send();
   }
+
+  @RequestMapping('/learnSkillSample')
+  async learnSkillSample(req: Request, res: Response): Promise<void> {
+    this.manageCardService.learnSkillSample();
+    res.status(200).send();
+  }
 }

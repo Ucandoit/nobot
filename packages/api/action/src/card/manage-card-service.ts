@@ -3,6 +3,7 @@ import {
   makeMobileRequest,
   makePostMobileRequest,
   NOBOT_MOBILE_URL,
+  regexUtils,
   Service
 } from '@nobot-core/commons';
 import { AccountRepository } from '@nobot-core/database';
@@ -115,6 +116,29 @@ export default class ManageCardService {
     return card;
   };
 
+  learnSkill = async (login: string, cardId: number): Promise<void> => {
+    const page = await makePostMobileRequest(NOBOT_MOBILE_URL.CARD_DETAIL, login, `cardid=${cardId}&button=1`);
+    await this.learnSkillLoop(login, cardId, page);
+  };
+
+  learnSkillSample = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    await executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        const atkCard = await this.findAccountCardByNumber(2088, login);
+        if (atkCard.id > 0) {
+          await this.learnSkill(login, atkCard.id);
+        }
+        const healCard = await this.findAccountCardByNumber(2103, login);
+        if (healCard.id > 0) {
+          await this.learnSkill(login, healCard.id);
+        }
+      },
+      10
+    );
+  };
+
   private findCardByNumber = async (
     number: number,
     login: string,
@@ -172,5 +196,46 @@ export default class ManageCardService {
       cardIdentifiers.push({ id, number });
     }
     return cardIdentifiers;
+  };
+
+  private learnSkillLoop = async (login: string, cardId: number, page: CheerioStatic): Promise<void> => {
+    const learnSkillButton = page('.card-learn-skill');
+    if (learnSkillButton.length > 0) {
+      const confirmUrl = learnSkillButton.parent().parent().attr('href') as string;
+      const confirmPage = await makeMobileRequest(confirmUrl, login, false);
+      if (confirmPage('form').length > 0) {
+        const addForm = confirmPage('form').first();
+        const procPage = await makePostMobileRequest(
+          addForm.attr('action') as string,
+          login,
+          addForm.serialize(),
+          false
+        );
+        if (procPage('form').length > 0) {
+          const procForm = procPage('form').first();
+          this.logger.info(
+            'Learn skill %s for card %d of %s',
+            procForm.find('input[name=skill_id]').val(),
+            cardId,
+            login
+          );
+          const resultPage = await makePostMobileRequest(
+            procForm.attr('action') as string,
+            login,
+            procForm.serialize(),
+            false
+          );
+          const redirectUrl = regexUtils.catchByRegex(resultPage.html(), /(?<=nextURL = ").+(?=")/) as string;
+          if (redirectUrl) {
+            const nextPage = await makeMobileRequest(redirectUrl, login, false);
+            await this.learnSkillLoop(login, cardId, nextPage);
+          }
+          return;
+        }
+      }
+      this.logger.error('Error while learning skill for card %d of %s', cardId, login);
+    } else {
+      this.logger.info('No skill to learn for card %d of %s', cardId, login);
+    }
   };
 }
