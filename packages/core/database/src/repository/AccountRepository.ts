@@ -1,8 +1,25 @@
-import { EntityRepository, MoreThan, Repository } from 'typeorm';
+import { EntityRepository, FindManyOptions, MoreThan, Repository } from 'typeorm';
 import { Account } from '../entities';
 
 @EntityRepository(Account)
 export default class CardRepository extends Repository<Account> {
+  getAll = (options: FindManyOptions<Account> = {}): Promise<Account[]> => {
+    return this.find({
+      order: {
+        login: 'ASC'
+      },
+      ...options
+    });
+  };
+
+  getAllActiveAccounts = (): Promise<Account[]> => {
+    return this.getAll({
+      where: {
+        expirationDate: MoreThan(new Date())
+      }
+    });
+  };
+
   getLastMobileAccount = (): Promise<{ [key: string]: string }> => {
     const query = this.createQueryBuilder('account')
       .select('account.login', 'login')

@@ -1,4 +1,6 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, OneToOne } from 'typeorm';
+// eslint-disable-next-line import/no-cycle
+import AccountConfig from './AccountConfig';
 
 @Index('account_pk', ['login'], { unique: true })
 @Entity('account', { schema: 'public' })
@@ -27,4 +29,8 @@ export default class Account {
 
   @Column('boolean', { name: 'mobile', default: () => 'false' })
   mobile: boolean;
+
+  @OneToOne(() => AccountConfig, (accountConfig) => accountConfig.account)
+  // @JoinColumn([{ name: 'login', referencedColumnName: 'login' }])
+  accountConfig: AccountConfig | null;
 }
