@@ -62,7 +62,7 @@ export default class BuildingService {
   }
 
   startAll = async (): Promise<void> => {
-    const accounts = await this.accountRepository.getMobileAccounts();
+    const accounts = await this.accountRepository.getMobileAccountsNeedBuilding();
     await executeConcurrent(
       accounts.map((account) => account.login),
       this.start,

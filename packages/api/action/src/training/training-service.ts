@@ -41,7 +41,7 @@ export default class TrainingService {
   }
 
   trainingSample = async (): Promise<void> => {
-    const accounts = await this.accountRepository.getMobileAccounts();
+    const accounts = await this.accountRepository.getMobileAccountsNeedTraining();
     await executeConcurrent(
       accounts.map((account) => account.login),
       async (login: string) => {

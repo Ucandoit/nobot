@@ -10,7 +10,7 @@ import LoginService from './login/login-service';
   const nobotApp = new NobotApp('api_action', __dirname);
   await nobotApp.start();
   // const buildingService = nobotApp.getContainer().get(BuildingService);
-  // buildingService.start('zz0001');
+  // buildingService.startAll();
   const loginService = nobotApp.getContainer().get(LoginService);
   scheduleJob('0 5 15 * * *', loginService.dailyLoginAll);
   // const manageCardService = nobotApp.getContainer().get(ManageCardService);
