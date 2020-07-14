@@ -6,7 +6,7 @@ import {
   NOBOT_MOBILE_URL,
   Service
 } from '@nobot-core/commons';
-import { AccountRepository } from '@nobot-core/database';
+import { AccountConfigRepository, AccountRepository } from '@nobot-core/database';
 import encoding from 'encoding-japanese';
 import he from 'he';
 import { inject } from 'inversify';
@@ -34,10 +34,13 @@ export default class TrainingService {
 
   private accountRepository: AccountRepository;
 
+  private accountConfigRepository: AccountConfigRepository;
+
   private trainingTasks = new Map<number, TrainingTask>();
 
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
+    this.accountConfigRepository = connection.getCustomRepository(AccountConfigRepository);
   }
 
   trainingSample = async (): Promise<void> => {
@@ -167,6 +170,38 @@ export default class TrainingService {
       ...task,
       start: false
     });
+  };
+
+  checkNeedTraining = async (): Promise<void> => {
+    this.logger.info('Start checking accounts training status.');
+    const accounts = await this.accountRepository.getMobileAccountsNeedTraining();
+    await executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        let training = false;
+        const atkCard = await this.manageCardService.findAccountCardByNumber(2088, login);
+        if (atkCard.id > 0) {
+          const cardInfo = await this.getCardInfo(atkCard.id, login);
+          if (cardInfo.refineCurrent < cardInfo.refineMax) {
+            training = true;
+          }
+        }
+        const healCard = await this.manageCardService.findAccountCardByNumber(2103, login);
+        if (healCard.id > 0) {
+          const cardInfo = await this.getCardInfo(healCard.id, login);
+          if (cardInfo.refineCurrent < cardInfo.refineMax) {
+            training = true;
+          }
+        }
+        if (!training) {
+          this.logger.info('Account %s has finished training all.', login);
+          this.accountConfigRepository.update(login, { training: false });
+        }
+      },
+      10
+    );
+    this.logger.info('Finish checking accounts training status.');
+    await this.trainingSample();
   };
 
   getCardInfo = async (cardId: number, login: string): Promise<any> => {

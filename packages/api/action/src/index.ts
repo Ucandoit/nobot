@@ -4,7 +4,7 @@ import { scheduleJob } from 'node-schedule';
 // import ManageCardService from './card/manage-card-service';
 import BuildingService from './building/building-service';
 import LoginService from './login/login-service';
-// import TrainingService from './training/training-service';
+import TrainingService from './training/training-service';
 
 (async function startApp(): Promise<void> {
   const nobotApp = new NobotApp('api_action', __dirname);
@@ -19,7 +19,8 @@ import LoginService from './login/login-service';
   // manageCardService.manageSampleDeck();
   // const villageService = nobotApp.getContainer().get(VillageService);
   // console.log(await villageService.getVillage('zz0001'));
-  // const trainingService = nobotApp.getContainer().get(TrainingService);
+  const trainingService = nobotApp.getContainer().get(TrainingService);
+  trainingService.checkNeedTraining();
   // trainingService.training('xzdykerik_04', 36635786, 'earth', 20);
   // trainingService.start('xzdykerik_04', 44832577, 'sky', 9);
   // trainingService.trainingSample();
