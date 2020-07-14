@@ -6,7 +6,7 @@ import {
   NOBOT_MOBILE_URL,
   Service
 } from '@nobot-core/commons';
-import { AccountRepository } from '@nobot-core/database';
+import { AccountConfigRepository, AccountRepository } from '@nobot-core/database';
 import he from 'he';
 import { inject } from 'inversify';
 import { getLogger } from 'log4js';
@@ -55,10 +55,13 @@ export default class BuildingService {
 
   private accountRepository: AccountRepository;
 
+  private accountConfigRepository: AccountConfigRepository;
+
   private buildTasks = new Map<string, BuildTask>();
 
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
+    this.accountConfigRepository = connection.getCustomRepository(AccountConfigRepository);
   }
 
   startAll = async (): Promise<void> => {
@@ -98,7 +101,36 @@ export default class BuildingService {
     return status;
   };
 
-  startBuild = async (login: string): Promise<void> => {
+  checkNeedBuilding = async (): Promise<void> => {
+    this.logger.info('Start checking accounts building status.');
+    const accounts = await this.accountRepository.getMobileAccountsNeedBuilding();
+    await executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        const areas = this.villageService.getMapInfo(page);
+        let building = false;
+        for (let i = 0; i < this.buildOrder.length; i++) {
+          const { facility, max } = this.buildOrder[i];
+          const targetFacility = facility === 'home_basic' ? 'home_adv' : facility;
+          const builtAreas = areas.filter((area) => area.building && area.building.facility === targetFacility);
+          if (builtAreas.length < max || !this.isMaxLevel(builtAreas)) {
+            building = true;
+            break;
+          }
+        }
+        if (!building) {
+          this.logger.info('Account %s has finished building all.', login);
+          this.accountConfigRepository.update(login, { building: false });
+        }
+      },
+      10
+    );
+    this.logger.info('Finish checking accounts building status.');
+    await this.startAll();
+  };
+
+  private startBuild = async (login: string): Promise<void> => {
     const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
     const commandInfo = page('.sp_village_command_info');
     if (
@@ -201,5 +233,17 @@ export default class BuildingService {
         });
       }
     }
+  };
+
+  private isMaxLevel = (areas: MapArea[]): boolean => {
+    let maxLevel = true;
+    for (let i = 0; i < areas.length; i++) {
+      const area = areas[i];
+      if (area.level < 9) {
+        maxLevel = false;
+        break;
+      }
+    }
+    return maxLevel;
   };
 }

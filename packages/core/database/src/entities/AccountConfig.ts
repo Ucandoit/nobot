@@ -11,7 +11,7 @@ export default class AccountConfig {
   @Column('boolean', { name: 'building', default: () => 'true' })
   building: boolean;
 
-  @Column('boolean', { name: 'training', default: () => 'false' })
+  @Column('boolean', { name: 'training', default: () => 'true' })
   training: boolean;
 
   @Column('boolean', { name: 'daily_login', default: () => 'true' })

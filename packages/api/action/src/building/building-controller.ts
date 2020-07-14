@@ -24,4 +24,10 @@ export default class BuildingController {
   status(req: Request, res: Response): void {
     res.status(200).send(this.buildingService.status());
   }
+
+  @RequestMapping('/check')
+  checkNeedBuilding(req: Request, res: Response): void {
+    this.buildingService.checkNeedBuilding();
+    res.status(200).send();
+  }
 }
