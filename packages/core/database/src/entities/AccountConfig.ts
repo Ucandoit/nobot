@@ -17,6 +17,9 @@ export default class AccountConfig {
   @Column('boolean', { name: 'daily_login', default: () => 'true' })
   dailyLogin: boolean;
 
+  @Column('boolean', { name: 'battle_clear', default: () => 'false' })
+  battleClear: boolean;
+
   @OneToOne(() => Account, (account) => account.accountConfig)
   @JoinColumn([{ name: 'login', referencedColumnName: 'login' }])
   account: Account;

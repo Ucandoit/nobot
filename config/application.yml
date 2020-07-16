@@ -11,21 +11,25 @@ projectName: api_card
 <<: !config config
 
 ---
-  projectName: api_auction
-  <<: !config config
+projectName: api_auction
+<<: !config config
 
 ---
-  projectName: api_sample
-  <<: !config config
+projectName: api_sample
+<<: !config config
 
 ---
-  projectName: api_story
-  <<: !config config
+projectName: api_story
+<<: !config config
 
 ---
-  projectName: api_tutorial
-  <<: !config config
+projectName: api_tutorial
+<<: !config config
 
 ---
-  projectName: api_action
-  <<: !config config
+projectName: api_action
+<<: !config config
+
+---
+projectName: api_battle
+<<: !config config
