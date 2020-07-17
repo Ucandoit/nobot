@@ -67,4 +67,18 @@ export default class CardRepository extends Repository<Account> {
       }
     });
   };
+
+  getMobileAccountsReady = (): Promise<Account[]> => {
+    return this.getAll({
+      join: { alias: 'account', leftJoin: { accountConfig: 'account.accountConfig' } },
+      where: (qb: SelectQueryBuilder<Account>) => {
+        qb.where({
+          expirationDate: MoreThan(new Date()),
+          mobile: true
+        })
+          .andWhere('accountConfig.building = :building', { building: false })
+          .andWhere('accountConfig.training = :training', { training: false });
+      }
+    });
+  };
 }

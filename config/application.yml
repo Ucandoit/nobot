@@ -33,3 +33,7 @@ projectName: api_action
 ---
 projectName: api_battle
 <<: !config config
+
+---
+projectName: api_war
+<<: !config config

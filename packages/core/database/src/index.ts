@@ -8,7 +8,8 @@ import {
   Card,
   Parameter,
   SellState,
-  StoreCard
+  StoreCard,
+  WarConfig
 } from './entities';
 
 export interface PostgresConnectionOptions {
@@ -37,7 +38,8 @@ const initConnection = async (options: PostgresConnectionOptions): Promise<Conne
       AccountCard,
       StoreCard,
       SellState,
-      AccountConfig
+      AccountConfig,
+      WarConfig
     ],
     logging: false,
     ...options

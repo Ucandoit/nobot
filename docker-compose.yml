@@ -152,5 +152,21 @@ services:
       - '4008:3000'
     environment:
       CONFIG_PROFILE: ${CONFIG_PROFILE}
+  war:
+    build:
+      context: ./
+      dockerfile: ./packages/api/war/Dockerfile.dev
+    volumes:
+      - ./config:/usr/src/app/config
+      - ./packages/core/commons:/usr/src/app/packages/core/commons
+      - ./packages/core/database:/usr/src/app/packages/core/database
+      - ./packages/api/war:/usr/src/app/packages/api/war
+      - /usr/src/app/packages/core/commons/node_modules
+      - /usr/src/app/packages/core/database/node_modules
+      - /usr/src/app/packages/api/war/node_modules
+    ports:
+      - '4009:3000'
+    environment:
+      CONFIG_PROFILE: ${CONFIG_PROFILE}
 volumes:
     nobot-pgdata:

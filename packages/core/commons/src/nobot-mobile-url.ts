@@ -19,6 +19,8 @@ export default {
   TRAINING: 'http://210.140.157.168/mobile/village/mobile_training_execute.htm',
   PROFILE: 'http://210.140.157.168/mobile/user/mobile_profile.htm',
   MAP_MOVE: 'http://210.140.157.168/mobile/areamap/mobile_areamap_move_ajax_confirm.htm',
+  WAR_ENTRY: 'http://210.140.157.168/mobile/war/mobile_war_entry.htm',
+  WAR_CONFIRM: 'http://210.140.157.168/mobile/war/mobile_war_confirm.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',
