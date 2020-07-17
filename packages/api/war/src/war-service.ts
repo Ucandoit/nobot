@@ -1,8 +1,10 @@
 import {
   executeConcurrent,
+  getFinalPage,
   makeMobileRequest,
   makePostMobileRequest,
   NOBOT_MOBILE_URL,
+  regexUtils,
   Service
 } from '@nobot-core/commons';
 import { AccountRepository, WarConfigRepository } from '@nobot-core/database';
@@ -10,6 +12,10 @@ import he from 'he';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
 
+interface WarTask {
+  start: boolean;
+  interval?: NodeJS.Timeout;
+}
 @Service()
 export default class WarService {
   private logger = getLogger(WarService.name);
@@ -18,6 +24,8 @@ export default class WarService {
 
   private warConfigRepository: WarConfigRepository;
 
+  private warTasks = new Map<string, WarTask>();
+
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
     this.warConfigRepository = connection.getCustomRepository(WarConfigRepository);
@@ -25,9 +33,8 @@ export default class WarService {
 
   test = async (): Promise<void> => {
     const login = 'zz0002';
-    this.logger.info(login);
-    // this.initWarParams();
-    // this.checkWar(login);
+    const page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_DECK, login);
+    this.logger.info(parseInt(page('.food').text(), 10));
   };
 
   initWarParams = async (): Promise<void> => {
@@ -127,5 +134,182 @@ export default class WarService {
     const form = page('#sp_sc_5').parent();
     await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
     this.logger.info('Choose war host %d for %s', countryId, login);
+  };
+
+  startAll = async (): Promise<void> => {
+    const warConfigs = await this.warConfigRepository.findEnabled();
+    executeConcurrent(
+      warConfigs.map((warConfig) => warConfig.login),
+      async (login: string) => {
+        await this.start(login);
+      },
+      10
+    );
+  };
+
+  stopAll = async (): Promise<void> => {
+    Array.from(this.warTasks.keys()).forEach((login) => {
+      this.stop(login);
+    });
+  };
+
+  start = async (login: string): Promise<void> => {
+    const task = this.warTasks.get(login);
+    if (task && task.start) {
+      this.logger.info('War task is already in progress for %s', login);
+    } else {
+      this.warTasks.set(login, { start: true });
+      this.logger.info('Start war for %s', login);
+      try {
+        await this.startWar(login);
+      } catch (err) {
+        this.logger.info('error while starting war for %s.', login);
+        this.logger.info(err);
+        this.waitForNext(login);
+      }
+    }
+  };
+
+  stop = (login: string): void => {
+    this.logger.info('Stop war for %s', login);
+    const task = this.warTasks.get(login);
+    if (task && task.interval) {
+      clearInterval(task.interval);
+    }
+    this.warTasks.delete(login);
+  };
+
+  private startWar = async (login: string): Promise<void> => {
+    const warConfig = await this.warConfigRepository.findOne(login);
+    if (warConfig && warConfig.enable) {
+      let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+      if (this.checkInWar(page)) {
+        this.logger.info('Still in war for %s.', login);
+        this.waitForNext(login);
+      } else {
+        const currentFood = await this.convertFood(login, page);
+        page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_DECK, login);
+        const deckFood = parseInt(page('.food').text(), 10);
+        if (deckFood <= currentFood) {
+          page = await makeMobileRequest(NOBOT_MOBILE_URL.WAR_ENTRY, login);
+          const lines = page('a[href*="entry_btl"]');
+          const lastDay = lines.length === 1;
+          if (!lastDay) {
+            const willGain = this.foodTilNextDay();
+            this.logger.info('%s will gain %d food til next day.', login, willGain);
+            if (currentFood + willGain < 7500) {
+              this.logger.info('Short in food for next day %s.', login);
+              this.stop(login);
+              return;
+            }
+          }
+          const line = lastDay ? lines.eq(0).attr('href') : lines.eq(warConfig.line - 1).attr('href');
+          page = await makeMobileRequest(line as string, login, false);
+          // confirm entry
+          let form = page('#sp_sc_5').parent();
+          const entryUrl = form.attr('action') as string;
+          page = await makePostMobileRequest(entryUrl, login, form.serialize(), false);
+          // confirm start
+          try {
+            form = page('#sp_sc_5').parent();
+            await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+          } catch (err) {
+            // retry once if error
+            page = await makePostMobileRequest(entryUrl, login, form.serialize(), false);
+            form = page('#sp_sc_5').parent();
+            await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+          }
+          this.logger.info('Set up war for %s at line %d', login, warConfig.line);
+          this.waitForNext(login);
+        } else {
+          this.logger.info('Short in food for %s.', login);
+          this.stop(login);
+        }
+      }
+    } else {
+      this.logger.warn('No war config found or not enabled for %s.', login);
+      this.stop(login);
+    }
+  };
+
+  private checkInWar = (page: CheerioStatic): boolean => {
+    const commandInfos = page('.sp_village_command_info');
+    let inWar = false;
+    for (let i = 0; i < commandInfos.length; i++) {
+      const commandInfo = commandInfos.eq(i);
+      if (commandInfo.html()?.includes(he.encode('合戦'))) {
+        inWar = true;
+        break;
+      }
+    }
+    return inWar;
+  };
+
+  private convertFood = async (login: string, page: CheerioStatic): Promise<number> => {
+    const fire = parseInt(page('#element_fire').text(), 10);
+    const earth = parseInt(page('#element_earth').text(), 10);
+    const wind = parseInt(page('#element_wind').text(), 10);
+    const water = parseInt(page('#element_water').text(), 10);
+    const sky = parseInt(page('#element_sky').text(), 10);
+    let food = parseInt(page('#element_food').text(), 10);
+
+    if (fire >= 3000 || earth >= 3000 || wind >= 3000 || water >= 3000 || sky >= 3000) {
+      const convertedFood =
+        Math.floor(fire / 20) +
+        Math.floor(earth / 20) +
+        Math.floor(wind / 20) +
+        Math.floor(water / 20) +
+        Math.floor(sky / 20);
+      if (convertedFood > 0 && convertedFood + food <= 7500) {
+        const buildIdx = this.getMarketBuildIdx(page);
+        if (buildIdx > 0) {
+          await makePostMobileRequest(NOBOT_MOBILE_URL.TRADE, login, `useall=1&buildIdx=${buildIdx}`);
+          food += convertedFood;
+        } else {
+          this.logger.warn('No market found for %s.', login);
+        }
+      } else {
+        this.logger.warn('Food exceeded for %s.', login);
+      }
+    }
+    return food;
+  };
+
+  private getMarketBuildIdx = (page: CheerioStatic): number => {
+    let buildIdx = 0;
+    const areas = page('#mapbg area');
+    for (let i = 0; i < areas.length; i++) {
+      const area = areas.eq(i);
+      const classes = area.attr('class') as string;
+      if (classes.includes('type13')) {
+        buildIdx = regexUtils.catchByRegex(classes, /(?<=map)[0-9]{2}/, 'integer') as number;
+        break;
+      }
+    }
+    return buildIdx;
+  };
+
+  private waitForNext = (login: string): void => {
+    const interval = setTimeout(() => {
+      this.startWar(login);
+    }, 120 * 1000);
+    const task = this.warTasks.get(login) as WarTask;
+    this.warTasks.set(login, {
+      ...task,
+      interval
+    });
+  };
+
+  private foodTilNextDay = (): number => {
+    const now = new Date();
+    const nextDay = new Date();
+    if (nextDay.getHours() >= 6) {
+      nextDay.setDate(nextDay.getDate() + 1);
+    }
+    nextDay.setHours(6);
+    nextDay.setMinutes(0);
+    nextDay.setSeconds(0);
+    const diff = nextDay.getTime() - now.getTime();
+    return Math.floor((310 * diff) / 3600000);
   };
 }

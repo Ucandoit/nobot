@@ -35,4 +35,15 @@ export default class WarConfigRepository extends Repository<WarConfig> {
       }
     });
   };
+
+  findEnabled = (): Promise<WarConfig[]> => {
+    return this.find({
+      where: {
+        enable: true
+      },
+      order: {
+        login: 'ASC'
+      }
+    });
+  };
 }

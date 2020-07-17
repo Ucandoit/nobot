@@ -1,4 +1,5 @@
-import { Controller } from '@nobot-core/commons';
+import { Controller, RequestMapping } from '@nobot-core/commons';
+import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import WarService from './war-service';
 
@@ -6,27 +7,29 @@ import WarService from './war-service';
 export default class WarController {
   @inject(WarService) warService: WarService;
 
-  // @RequestMapping('/start')
-  // startAll(req: Request, res: Response): void {
-  //   this.buildingService.startAll();
-  //   res.status(200).send();
-  // }
+  @RequestMapping('/startAll')
+  startAll(req: Request, res: Response): void {
+    this.warService.startAll();
+    res.status(200).send();
+  }
 
-  // @RequestMapping('/start/:login')
-  // start(req: Request, res: Response): void {
-  //   const { login } = req.params;
-  //   this.buildingService.start(login);
-  //   res.status(200).send();
-  // }
+  @RequestMapping('/stopAll')
+  stopAll(req: Request, res: Response): void {
+    this.warService.stopAll();
+    res.status(200).send();
+  }
 
-  // @RequestMapping('/status')
-  // status(req: Request, res: Response): void {
-  //   res.status(200).send(this.buildingService.status());
-  // }
+  @RequestMapping('/start/:login')
+  start(req: Request, res: Response): void {
+    const { login } = req.params;
+    this.warService.start(login);
+    res.status(200).send();
+  }
 
-  // @RequestMapping('/check')
-  // checkNeedBuilding(req: Request, res: Response): void {
-  //   this.buildingService.checkNeedBuilding();
-  //   res.status(200).send();
-  // }
+  @RequestMapping('/stop/:login')
+  stop(req: Request, res: Response): void {
+    const { login } = req.params;
+    this.warService.stop(login);
+    res.status(200).send();
+  }
 }

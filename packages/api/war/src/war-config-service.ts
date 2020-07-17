@@ -29,4 +29,9 @@ export default class WarConfigService {
       }
     });
   };
+
+  setLineByGroup = async (line: number, group: string): Promise<void> => {
+    this.logger.info('Change to line %d for group %s.', line, group);
+    await this.warConfigRepository.update({ group }, { line });
+  };
 }
