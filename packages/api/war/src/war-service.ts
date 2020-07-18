@@ -222,7 +222,7 @@ export default class WarService {
           this.logger.info('Set up war for %s at line %d', login, warConfig.line);
           this.waitForNext(login);
         } else {
-          this.logger.info('Short in food for %s.', login);
+          this.logger.info('Short in food (%d/%d) for %s.', deckFood, currentFood, login);
           this.stop(login);
         }
       }
