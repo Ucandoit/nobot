@@ -1,4 +1,4 @@
-import { Controller, RequestMapping } from '@nobot-core/commons';
+import { Controller, getQueryParamAsString, RequestMapping } from '@nobot-core/commons';
 import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import WarService from './war-service';
@@ -30,6 +30,26 @@ export default class WarController {
   stop(req: Request, res: Response): void {
     const { login } = req.params;
     this.warService.stop(login);
+    res.status(200).send();
+  }
+
+  @RequestMapping('/completePreQuests')
+  completePreQuests(req: Request, res: Response): void {
+    const group = getQueryParamAsString(req, 'group');
+    if (group) {
+      this.warService.completePreQuestsByGroup(group);
+    }
+    // TODO: complete quest by login
+    res.status(200).send();
+  }
+
+  @RequestMapping('/completeWarQuests')
+  completeWarQuests(req: Request, res: Response): void {
+    const group = getQueryParamAsString(req, 'group');
+    if (group) {
+      this.warService.completeWarQuestsByGroup(group);
+    }
+    // TODO: complete quest by login
     res.status(200).send();
   }
 }

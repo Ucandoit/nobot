@@ -8,6 +8,7 @@ import {
   Service
 } from '@nobot-core/commons';
 import { AccountRepository, WarConfigRepository } from '@nobot-core/database';
+import axios from 'axios';
 import he from 'he';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
@@ -179,17 +180,51 @@ export default class WarService {
     this.warTasks.delete(login);
   };
 
+  completePreQuestsByGroup = async (group: string): Promise<void> => {
+    this.completeQuestsByGroup(group, [54, 94]);
+  };
+
+  completeWarQuestsByGroup = async (group: string): Promise<void> => {
+    this.completeQuestsByGroup(group, [139, 158, 218, 219, 181, 182]);
+  };
+
+  private completeQuestsByGroup = async (group: string, questIds: number[]): Promise<void> => {
+    const warConfigs = await this.warConfigRepository.findByGroup(group);
+    await executeConcurrent(
+      warConfigs.map((warConfig) => warConfig.login),
+      async (login: string) => {
+        await executeConcurrent(
+          questIds,
+          async (questId: number) => {
+            this.logger.info('Complete quest %d for %s.', questId, login);
+            await axios.get(`http://action:3000/action/quest/complete?login=${login}&quest=${questId}`);
+          },
+          1
+        );
+      },
+      10
+    );
+  };
+
   private startWar = async (login: string): Promise<void> => {
     const warConfig = await this.warConfigRepository.findOne(login);
     if (warConfig && warConfig.enable) {
       let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+      // Fix error when village page is not loaded
+      if (page('#element_food').length === 0) {
+        this.logger.info('Retry get village page.');
+        page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+      }
       if (this.checkInWar(page)) {
         this.logger.info('Still in war for %s.', login);
         this.waitForNext(login);
       } else {
         const currentFood = await this.convertFood(login, page);
         page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_DECK, login);
-        const deckFood = parseInt(page('.food').text(), 10);
+        let deckFood = parseInt(page('.food').text(), 10);
+        if (warConfig.fp || warConfig.npc) {
+          deckFood *= 3;
+        }
         if (deckFood <= currentFood) {
           page = await makeMobileRequest(NOBOT_MOBILE_URL.WAR_ENTRY, login);
           const lines = page('a[href*="entry_btl"]');
@@ -212,18 +247,28 @@ export default class WarService {
           // confirm start
           try {
             form = page('#sp_sc_5').parent();
-            await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+            await makePostMobileRequest(
+              form.attr('action') as string,
+              login,
+              `${form.serialize()}${warConfig.npc ? '&npc=1' : ''}`,
+              false
+            );
           } catch (err) {
             // retry once if error
             page = await makePostMobileRequest(entryUrl, login, form.serialize(), false);
             form = page('#sp_sc_5').parent();
-            await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+            await makePostMobileRequest(
+              form.attr('action') as string,
+              login,
+              `${form.serialize()}${warConfig.npc ? '&npc=1' : ''}`,
+              false
+            );
           }
-          this.logger.info('Set up war for %s at line %d', login, warConfig.line);
+          this.logger.info('Set up war for %s at line %d, npc: %s', login, warConfig.line, warConfig.npc && lastDay);
           this.waitForNext(login);
         } else {
-          this.logger.info('Short in food (%d/%d) for %s.', deckFood, currentFood, login);
-          this.stop(login);
+          this.logger.info('Short in food (%d/%d) for %s. Recheck 1 hour later.', deckFood, currentFood, login);
+          this.waitForNext(login, 3600);
         }
       }
     } else {
@@ -252,6 +297,9 @@ export default class WarService {
     const water = parseInt(page('#element_water').text(), 10);
     const sky = parseInt(page('#element_sky').text(), 10);
     let food = parseInt(page('#element_food').text(), 10);
+    if (Number.isNaN(food)) {
+      throw new Error(`Food is NaN for ${login}`);
+    }
 
     if (fire >= 3000 || earth >= 3000 || wind >= 3000 || water >= 3000 || sky >= 3000) {
       const convertedFood =
@@ -260,6 +308,7 @@ export default class WarService {
         Math.floor(wind / 20) +
         Math.floor(water / 20) +
         Math.floor(sky / 20);
+      this.logger.info('Convert food: %d', convertedFood);
       if (convertedFood > 0 && convertedFood + food <= 7500) {
         const buildIdx = this.getMarketBuildIdx(page);
         if (buildIdx > 0) {
@@ -289,10 +338,10 @@ export default class WarService {
     return buildIdx;
   };
 
-  private waitForNext = (login: string): void => {
+  private waitForNext = (login: string, seconds = 120): void => {
     const interval = setTimeout(() => {
       this.startWar(login);
-    }, 120 * 1000);
+    }, seconds * 1000);
     const task = this.warTasks.get(login) as WarTask;
     this.warTasks.set(login, {
       ...task,

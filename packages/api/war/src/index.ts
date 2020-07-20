@@ -8,6 +8,7 @@ import WarService from './war-service';
   await nobotApp.start();
   const warService = nobotApp.getContainer().get(WarService);
   scheduleJob('0 0 5 * * *', warService.stopAll);
+  // warService.start('zz0003');
   // warService.startAll();
   // warService.test();
   // warService.checkWar();
