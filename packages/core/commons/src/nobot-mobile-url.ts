@@ -23,6 +23,7 @@ export default {
   WAR_CONFIRM: 'http://210.140.157.168/mobile/war/mobile_war_confirm.htm',
   TRADE: 'http://210.140.157.168/mobile/village/mobile_market_execute.htm',
   QUEST: 'http://210.140.157.168/mobile/tutorial/mobile_tutorial_mission.htm',
+  BOOKS_DETAIL: 'http://210.140.157.168/mobile/card/sub/mobile_get_books_detail.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',

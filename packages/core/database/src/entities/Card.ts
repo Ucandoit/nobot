@@ -22,7 +22,7 @@ export default class Card {
   property: string;
 
   @Column('numeric', { name: 'cost', precision: 2, scale: 1 })
-  cost: string;
+  cost: number;
 
   @Column('character varying', { name: 'military', length: 32 })
   military: string;

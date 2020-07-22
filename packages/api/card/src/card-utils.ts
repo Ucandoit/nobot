@@ -56,3 +56,28 @@ export const imagesToNumber = (images: string[]): number => {
   }
   return total;
 };
+
+export const imagesToCost = (images: string[]): number => {
+  let floatString = '';
+  images.forEach((image) => {
+    if (image.includes('num_cost_dot')) {
+      floatString += '.';
+    } else {
+      floatString += imageToNumber(image, 'num_cost_');
+    }
+  });
+  return parseFloat(floatString);
+};
+
+export const getMilitary = (img: string | undefined): string => {
+  if (img?.includes('mounted')) {
+    return '騎馬';
+  }
+  if (img?.includes('soldier')) {
+    return '足軽';
+  }
+  if (img?.includes('gunner')) {
+    return '鉄砲';
+  }
+  return 'N/A';
+};

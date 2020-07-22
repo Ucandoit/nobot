@@ -25,4 +25,12 @@ export default class CardRepository extends Repository<Card> {
       });
     return query.getManyAndCount();
   };
+
+  getCompleteCardIds = (): Promise<{ [key: string]: number }[]> => {
+    const query = this.createQueryBuilder('card')
+      .select('card.id', 'id')
+      .orderBy('card.id', 'ASC')
+      .where('card.number <> 9999 and card.cost <> 0');
+    return query.getRawMany();
+  };
 }
