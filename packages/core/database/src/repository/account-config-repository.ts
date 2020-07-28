@@ -1,26 +1,25 @@
 import { EntityRepository, Repository } from 'typeorm';
-import { Card } from '../entities';
+import { AccountConfig } from '../entities';
 
-@EntityRepository(Card)
-export default class CardRepository extends Repository<Card> {
+@EntityRepository(AccountConfig)
+export default class AccountConfigRepository extends Repository<AccountConfig> {
   findAll = (
     page = 0,
     size = 20,
-    sort: keyof Card = 'number',
+    sort = 'login',
     order: 'ASC' | 'DESC' = 'ASC',
-    filters?: Record<keyof Card, string>
-  ): Promise<[Card[], number]> => {
-    const query = this.createQueryBuilder('card')
+    filters?: Partial<AccountConfig>
+  ): Promise<[AccountConfig[], number]> => {
+    const query = this.createQueryBuilder('accountConfig')
       .take(size)
       .skip(page * size)
       .orderBy({
-        [`card.${sort}`]: {
+        [`accountConfig.${sort}`]: {
           order,
           nulls: order === 'ASC' ? 'NULLS FIRST' : 'NULLS LAST'
         }
       })
       .where({
-        display: true,
         ...filters
       });
     return query.getManyAndCount();

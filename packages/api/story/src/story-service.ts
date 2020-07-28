@@ -48,7 +48,8 @@ export default class StoryService {
   getAllChapterReward = async (): Promise<void> => {
     const accounts = await this.accountRepository.find({
       where: {
-        expirationDate: MoreThan(new Date())
+        expirationDate: MoreThan(new Date()),
+        mobile: false
       },
       order: {
         login: 'ASC'
@@ -64,7 +65,8 @@ export default class StoryService {
   getAllPointReward = async (): Promise<void> => {
     const accounts = await this.accountRepository.find({
       where: {
-        expirationDate: MoreThan(new Date())
+        expirationDate: MoreThan(new Date()),
+        mobile: false
       },
       order: {
         login: 'ASC'
