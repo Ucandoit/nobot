@@ -13,4 +13,8 @@ export interface AuctionSearchObject {
   maxNp: number;
   minDeed: number;
   maxDeed: number;
+  sortKey: number;
+  sortOrder: number;
+  checkMerge: boolean;
+  checkNewCard: boolean;
 }
