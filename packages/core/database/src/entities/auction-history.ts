@@ -28,6 +28,9 @@ export default class AuctionHistory {
   @Column('boolean', { name: 'bought', nullable: true })
   bought: boolean | null;
 
+  @Column('json', { name: 'detail', nullable: true })
+  detail: object | null;
+
   @ManyToOne(() => Account)
   @JoinColumn([{ name: 'login', referencedColumnName: 'login' }])
   account: Account;

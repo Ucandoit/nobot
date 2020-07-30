@@ -13,6 +13,6 @@ import AuctionSnipingService from './sniping/auction-sniping-service';
   //   textSearch: 0,
   //   name: 'a'
   // });
-  const auctionSearchService = nobotApp.getContainer().get(AuctionSnipingService);
-  auctionSearchService.startSniping('zz0001');
+  const auctionSnipingService = nobotApp.getContainer().get(AuctionSnipingService);
+  auctionSnipingService.startSniping('zz0001');
 })();
