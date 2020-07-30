@@ -17,6 +17,17 @@ export default class AuctionConfigRepository extends Repository<AuctionConfig> {
             date: new Date()
           })
           .andWhere('account.mobile = true');
+      },
+      order: {
+        login: 'ASC'
+      }
+    });
+  };
+
+  getAll = (): Promise<AuctionConfig[]> => {
+    return this.find({
+      order: {
+        login: 'ASC'
       }
     });
   };

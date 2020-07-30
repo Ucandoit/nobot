@@ -1,4 +1,11 @@
-import { makeMobileRequest, NOBOT_MOBILE_URL, redisClient, regexUtils, Service } from '@nobot-core/commons';
+import {
+  makeMobileRequest,
+  makePostMobileRequest,
+  NOBOT_MOBILE_URL,
+  redisClient,
+  regexUtils,
+  Service
+} from '@nobot-core/commons';
 import { AuctionConfigRepository, AuctionHistory, AuctionHistoryRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Job, scheduleJob } from 'node-schedule';
@@ -19,24 +26,53 @@ export default class AuctionSnipingService {
     this.auctionConfigRepository = connection.getCustomRepository(AuctionConfigRepository);
   }
 
+  dailyReset = async (): Promise<void> => {
+    this.logger.info('Daily reset start.');
+    this.stopAll();
+    this.logger.info('Clear sniping count for all start.');
+    const auctionConfigs = await this.auctionConfigRepository.getAll();
+    await auctionConfigs.forEach(async (auctionConfig) => {
+      await redisClient.del(`sniping-count-${auctionConfig.login}`);
+    });
+    this.logger.info('Clear sniping count for all finish.');
+    this.startAll();
+    this.logger.info('Daily reset finish.');
+  };
+
   startAll = async (): Promise<void> => {
     this.logger.info('Start all auction sniping.');
     const auctionConfigs = await this.auctionConfigRepository.getEnabledAuctionConfigs();
     const now = new Date();
     const offset = -9;
-    auctionConfigs.forEach(async (auctionConfig) => {
+    auctionConfigs.forEach((auctionConfig) => {
       const startTime = this.calculateStartTime(auctionConfig.startHour, now, offset);
       const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
       this.startSniping(auctionConfig.login, startTime, endTime);
     });
   };
 
+  stopAll = (): void => {
+    this.logger.info('Stop all auction sniping.');
+    this.jobs.forEach((job) => {
+      job.cancel();
+    });
+    this.jobs = new Map<string, Job>();
+  };
+
   startSniping = (login: string, start?: Date, end?: Date): void => {
-    const rule = '*/20 * * * * *';
+    const rule = '*/5 * * * * *';
     const jobOptions = start && end ? { start, end, rule } : rule;
     this.logger.info('Start job for %s, start time: %s, end time: %s', login, start, end);
     const job = scheduleJob(jobOptions, this.createJob(login));
     this.jobs.set(login, job);
+  };
+
+  stopSniping = (login: string): void => {
+    this.logger.info('Stop auction sniping for %s.', login);
+    const job = this.jobs.get(login);
+    if (job) {
+      job.cancel();
+    }
   };
 
   createJob = (login: string) => {
@@ -66,6 +102,12 @@ export default class AuctionSnipingService {
             if (currentNp >= (auctionCard.cardPrice as number)) {
               this.logger.info('Trying to buy for %s.', login);
               // request buy card
+              const tradeId = regexUtils.catchByRegex(
+                cardMessages.first().attr('id'),
+                /(?<=.+)[0-9]+/,
+                'integer'
+              ) as number;
+              await makePostMobileRequest(NOBOT_MOBILE_URL.TRADE_BUY, login, `trade_id=${tradeId}&select=yes&catev=0`);
               // save in history
               await this.auctionHistoryRepository.save({
                 ...auctionCard,
@@ -74,7 +116,6 @@ export default class AuctionSnipingService {
               });
             } else {
               this.logger.info('Not enough money for %s.', login);
-              // TODO can be saved for consulting
             }
           } else {
             this.logger.info('Nothing found for %s.', login);
