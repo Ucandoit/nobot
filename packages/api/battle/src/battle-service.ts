@@ -1,4 +1,5 @@
 import {
+  getFinalPage,
   makeMobileRequest,
   makePostMobileRequest,
   nobotUtils,
@@ -10,16 +11,40 @@ import { getLogger } from 'log4js';
 import countryConfig from './country-config';
 import { Country } from './types';
 
+interface BattleTask {
+  start: boolean;
+  interval?: NodeJS.Timeout;
+}
+
 @Service()
 export default class BattleService {
   private logger = getLogger(BattleService.name);
 
-  test = async (): Promise<void> => {
-    const login = 'zz0001';
+  private battleTasks = new Map<string, BattleTask>();
+
+  start = async (login: string): Promise<void> => {
+    const task = this.battleTasks.get(login);
+    if (task && task.start) {
+      this.logger.info('Battle task is already in progress for %s.', login);
+    } else {
+      this.battleTasks.set(login, { start: true });
+      this.logger.info('Start to battle for %s', login);
+      await this.startBattle(login);
+    }
+  };
+
+  startBattle = async (login: string): Promise<void> => {
+    let page = await getFinalPage(NOBOT_MOBILE_URL.AREA_MAP, login);
+    const currentFood = parseInt(page('#element_food').text(), 10);
+    page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_DECK, login);
+    const deckFood = parseInt(page('.food').text(), 10);
+    if (currentFood < deckFood) {
+      this.logger.info('Not enough food for %s.', login);
+      return;
+    }
     const friendships = await this.getFriendships(login);
     const targetCountry = this.getLowestFriendshipCountry(friendships, '');
-    this.logger.info(targetCountry);
-    this.goToCountry(login, targetCountry);
+    await this.goToCountry(login, targetCountry);
   };
 
   getFriendships = async (login: string): Promise<Map<string, number>> => {
@@ -55,16 +80,13 @@ export default class BattleService {
   goToCountry = async (login: string, targetCountry: Country): Promise<void> => {
     const page = await makeMobileRequest(NOBOT_MOBILE_URL.AREA_MAP, login);
     const areas = page('#mapbg area');
-    const countryIds: number[] = [];
-    for (let i = 0; i < areas.length; i++) {
-      const area = areas.eq(i);
-      countryIds.push(parseInt(area.attr('id') as string, 10));
-    }
+    const countryIds: number[] = areas.map((i, area) => parseInt(area.attribs.id, 10)).get();
     const currentCountry = countryConfig.getCountryList().find((c) => !countryIds.includes(c.id));
-    this.logger.info(currentCountry);
     if (currentCountry === targetCountry) {
       this.logger.info('Already at %s for %s', targetCountry.city, login);
-      // TODO call
+      setTimeout(() => {
+        this.fightEnemy(login);
+      }, 100);
     } else {
       const movePage = await makePostMobileRequest(NOBOT_MOBILE_URL.MAP_MOVE, login, `id=${targetCountry.id}`);
       const seconds = nobotUtils.getSeconds(
@@ -74,7 +96,29 @@ export default class BattleService {
       const form = movePage('#sp_sc_5').parent();
       await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
       this.logger.info('Wait %d seconds to go to %s for %s', seconds, targetCountry.city, login);
-      // TODO call next step
+      setTimeout(() => {
+        this.fightEnemy(login);
+      }, seconds * 1000);
+    }
+  };
+
+  fightEnemy = async (login: string): Promise<void> => {
+    let page = await makeMobileRequest(NOBOT_MOBILE_URL.AREA_MAP, login);
+    const emenyContainers = page('.enemy_container');
+    if (emenyContainers.length === 0) {
+      this.logger.info('No enemy left, go to next country.');
+      setTimeout(() => {
+        this.startBattle(login);
+      }, 100);
+    } else {
+      const seconds = nobotUtils.getSeconds(
+        emenyContainers.first().find('.enemy_detail > div').eq(1).find('span').eq(1).text()
+      );
+      const nextUrl = emenyContainers.first().find('.enemy_button > a').attr('href') as string;
+      page = await makeMobileRequest(nextUrl, login, false);
+      const form = page('#sp_sc_5').parent();
+      await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+      this.logger.info('Wait %d seconds to battle for %s', seconds, login);
     }
   };
 }

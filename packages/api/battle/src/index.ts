@@ -6,5 +6,5 @@ import BattleService from './battle-service';
   const nobotApp = new NobotApp('api_battle', __dirname);
   await nobotApp.start();
   const battleService = nobotApp.getContainer().get(BattleService);
-  battleService.test();
+  battleService.start('zz0001');
 })();
