@@ -65,7 +65,7 @@ export default class BuildingService {
   }
 
   startAll = async (): Promise<void> => {
-    const accounts = await this.accountRepository.getMobileAccountsNeedBuilding();
+    const accounts = await this.accountRepository.getMobileAccountsByStatus('BUILDING');
     await executeConcurrent(
       accounts.map((account) => account.login),
       this.start,
@@ -103,7 +103,7 @@ export default class BuildingService {
 
   checkNeedBuilding = async (): Promise<void> => {
     this.logger.info('Start checking accounts building status.');
-    const accounts = await this.accountRepository.getMobileAccountsNeedBuilding();
+    const accounts = await this.accountRepository.getMobileAccountsByStatus('BUILDING');
     await executeConcurrent(
       accounts.map((account) => account.login),
       async (login: string) => {
@@ -121,7 +121,7 @@ export default class BuildingService {
         }
         if (!building) {
           this.logger.info('Account %s has finished building all.', login);
-          await this.accountConfigRepository.update(login, { building: false });
+          await this.accountConfigRepository.update(login, { status: 'TRAINING' });
         }
       },
       10

@@ -1,5 +1,5 @@
 import { EntityRepository, FindManyOptions, MoreThan, Repository, SelectQueryBuilder } from 'typeorm';
-import { Account } from '../entities';
+import { Account, Status } from '../entities';
 
 @EntityRepository(Account)
 export default class CardRepository extends Repository<Account> {
@@ -41,43 +41,14 @@ export default class CardRepository extends Repository<Account> {
     });
   };
 
-  getMobileAccountsNeedBuilding = (): Promise<Account[]> => {
+  getMobileAccountsByStatus = (status: Status): Promise<Account[]> => {
     return this.getAll({
       join: { alias: 'account', leftJoin: { accountConfig: 'account.accountConfig' } },
       where: (qb: SelectQueryBuilder<Account>) => {
         qb.where({
           expirationDate: MoreThan(new Date()),
           mobile: true
-        }).andWhere('accountConfig.building = :building', { building: true });
-      }
-    });
-  };
-
-  getMobileAccountsNeedTraining = (): Promise<Account[]> => {
-    return this.getAll({
-      join: { alias: 'account', leftJoin: { accountConfig: 'account.accountConfig' } },
-      where: (qb: SelectQueryBuilder<Account>) => {
-        qb.where({
-          expirationDate: MoreThan(new Date()),
-          mobile: true
-        })
-          // building has to be false in order to start training
-          .andWhere('accountConfig.building = :building', { building: false })
-          .andWhere('accountConfig.training = :training', { training: true });
-      }
-    });
-  };
-
-  getMobileAccountsReady = (): Promise<Account[]> => {
-    return this.getAll({
-      join: { alias: 'account', leftJoin: { accountConfig: 'account.accountConfig' } },
-      where: (qb: SelectQueryBuilder<Account>) => {
-        qb.where({
-          expirationDate: MoreThan(new Date()),
-          mobile: true
-        })
-          .andWhere('accountConfig.building = :building', { building: false })
-          .andWhere('accountConfig.training = :training', { training: false });
+        }).andWhere('accountConfig.status = :status', { status });
       }
     });
   };

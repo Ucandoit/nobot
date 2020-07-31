@@ -1,6 +1,6 @@
 export { default as Account } from './Account';
 export { default as AccountCard } from './AccountCard';
-export { default as AccountConfig } from './AccountConfig';
+export { default as AccountConfig, Status } from './AccountConfig';
 export { default as AuctionHistory } from './auction-history';
 export { default as AuctionConfig } from './AuctionConfig';
 export { default as Card } from './Card';

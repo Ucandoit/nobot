@@ -17,7 +17,7 @@ export default class WarConfigService {
   }
 
   initializeWarConfigs = async (): Promise<void> => {
-    const accounts = await this.accountRepository.getMobileAccountsReady();
+    const accounts = await this.accountRepository.getMobileAccountsByStatus('FINISH');
     accounts.forEach(async (account) => {
       const warConfig = await this.warConfigRepository.findOne(account.login);
       if (!warConfig) {

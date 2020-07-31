@@ -44,7 +44,7 @@ export default class TrainingService {
   }
 
   trainingSample = async (): Promise<void> => {
-    const accounts = await this.accountRepository.getMobileAccountsNeedTraining();
+    const accounts = await this.accountRepository.getMobileAccountsByStatus('TRAINING');
     await executeConcurrent(
       accounts.map((account) => account.login),
       async (login: string) => {
@@ -174,7 +174,7 @@ export default class TrainingService {
 
   checkNeedTraining = async (): Promise<void> => {
     this.logger.info('Start checking accounts training status.');
-    const accounts = await this.accountRepository.getMobileAccountsNeedTraining();
+    const accounts = await this.accountRepository.getMobileAccountsByStatus('TRAINING');
     await executeConcurrent(
       accounts.map((account) => account.login),
       async (login: string) => {
@@ -195,7 +195,7 @@ export default class TrainingService {
         }
         if (!training) {
           this.logger.info('Account %s has finished training all.', login);
-          await this.accountConfigRepository.update(login, { training: false });
+          await this.accountConfigRepository.update(login, { status: 'FINISH' });
         }
       },
       10
