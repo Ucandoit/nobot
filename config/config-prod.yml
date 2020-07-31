@@ -6,7 +6,7 @@ config:
     password: nobot
     database: nobot
     schema: public
-    synchronize: true
+    synchronize: false
     logging: false
   redis:
     host: nobot-redis
