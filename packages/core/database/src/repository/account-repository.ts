@@ -52,4 +52,18 @@ export default class CardRepository extends Repository<Account> {
       }
     });
   };
+
+  getMobileAccountsNeedBattle = (): Promise<Account[]> => {
+    return this.getAll({
+      join: { alias: 'account', leftJoin: { accountConfig: 'account.accountConfig' } },
+      where: (qb: SelectQueryBuilder<Account>) => {
+        qb.where({
+          expirationDate: MoreThan(new Date()),
+          mobile: true
+        })
+          .andWhere('accountConfig.status = :status', { status: 'FINISH' })
+          .andWhere('accountConfig.battleClear = false');
+      }
+    });
+  };
 }

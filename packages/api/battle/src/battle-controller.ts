@@ -1,4 +1,5 @@
-import { Controller } from '@nobot-core/commons';
+import { Controller, HttpStatus, RequestMapping } from '@nobot-core/commons';
+import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import BattleService from './battle-service';
 
@@ -6,11 +7,17 @@ import BattleService from './battle-service';
 export default class BattleController {
   @inject(BattleService) battleService: BattleService;
 
-  // @RequestMapping('/start')
-  // startAll(req: Request, res: Response): void {
-  //   this.buildingService.startAll();
-  //   res.status(200).send();
-  // }
+  @RequestMapping('/start/all')
+  startAll(req: Request, res: Response): void {
+    this.battleService.startAll();
+    res.status(HttpStatus.OK).send();
+  }
+
+  @RequestMapping('/stop/all')
+  stopAll(req: Request, res: Response): void {
+    this.battleService.stopAll();
+    res.status(HttpStatus.OK).send();
+  }
 
   // @RequestMapping('/start/:login')
   // start(req: Request, res: Response): void {
