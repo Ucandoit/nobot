@@ -44,7 +44,7 @@ export default class SkillScanService {
         const divSkill = divMark.prevAll('div').first();
         const fonts = divSkill.find('font');
         this.logger.info('Create skill %d.', skillId);
-        this.skillRepository.save({
+        await this.skillRepository.save({
           id: skillId,
           name: fonts.eq(0)[0].nextSibling.nodeValue,
           property: fonts.eq(1)[0].nextSibling.nodeValue,

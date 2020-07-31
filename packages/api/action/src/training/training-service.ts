@@ -195,7 +195,7 @@ export default class TrainingService {
         }
         if (!training) {
           this.logger.info('Account %s has finished training all.', login);
-          this.accountConfigRepository.update(login, { training: false });
+          await this.accountConfigRepository.update(login, { training: false });
         }
       },
       10

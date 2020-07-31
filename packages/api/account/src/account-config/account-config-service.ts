@@ -30,10 +30,10 @@ export default class AccountConfigService {
     const accounts = await this.accountRepository.getAll({
       relations: ['accountConfig']
     });
-    accounts.forEach((account) => {
+    accounts.forEach(async (account) => {
       if (!account.accountConfig) {
         this.logger.info('Create account config for %s', account.login);
-        this.accountConfigRepository.save({
+        await this.accountConfigRepository.save({
           login: account.login
         });
       }

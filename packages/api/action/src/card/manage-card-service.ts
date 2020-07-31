@@ -122,7 +122,7 @@ export default class ManageCardService {
   };
 
   learnSkillSample = async (): Promise<void> => {
-    const accounts = await this.accountRepository.getMobileAccounts();
+    const accounts = await this.accountRepository.getMobileAccountsReady();
     await executeConcurrent(
       accounts.map((account) => account.login),
       async (login: string) => {

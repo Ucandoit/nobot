@@ -121,7 +121,7 @@ export default class BuildingService {
         }
         if (!building) {
           this.logger.info('Account %s has finished building all.', login);
-          this.accountConfigRepository.update(login, { building: false });
+          await this.accountConfigRepository.update(login, { building: false });
         }
       },
       10

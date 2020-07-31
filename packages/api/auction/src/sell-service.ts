@@ -35,7 +35,7 @@ export default class SellService {
         this.sellStateRepository.save(sellState);
       } else {
         this.logger.info('Create sell state for %d: %s', cardId, accountCard.card.name);
-        this.sellStateRepository.save({
+        await this.sellStateRepository.save({
           accountCard: { id: cardId },
           status: 'SELLING',
           price: sellPrice,
@@ -108,7 +108,7 @@ export default class SellService {
     const sellStates = await this.sellStateRepository.findByIds([86, 111, 112]);
     sellStates.forEach(async (sellState) => {
       const card = await this.cardRepository.findOne((sellState.archivedData as any).cardId);
-      this.sellStateRepository.update(sellState.id, {
+      await this.sellStateRepository.update(sellState.id, {
         archivedData: {
           ...sellState.archivedData,
           card

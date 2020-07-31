@@ -216,7 +216,7 @@ export default class CardService {
             card: { id: card?.id }
           };
           this.logger.info('Create account card for %s.', login);
-          this.accountCardRepository.save(newCard);
+          await this.accountCardRepository.save(newCard);
         } else {
           this.logger.error('Card %d not found.', number);
         }

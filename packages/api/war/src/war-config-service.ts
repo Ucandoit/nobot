@@ -22,7 +22,7 @@ export default class WarConfigService {
       const warConfig = await this.warConfigRepository.findOne(account.login);
       if (!warConfig) {
         this.logger.info('Create war config for %s.', account.login);
-        this.warConfigRepository.save({
+        await this.warConfigRepository.save({
           login: account.login,
           group: 'BASIC'
         });

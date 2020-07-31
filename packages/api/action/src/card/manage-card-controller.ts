@@ -15,7 +15,7 @@ export default class ManageCardController {
 
   @RequestMapping('/deckSample')
   async deckSample(req: Request, res: Response): Promise<void> {
-    this.manageCardService.moveSampleCard();
+    this.manageCardService.manageSampleDeck();
     res.status(200).send();
   }
 
