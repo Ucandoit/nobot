@@ -27,6 +27,8 @@ export default {
   SKILL_CONFIRM: 'http://210.140.157.168/mobile/card/mobile_learn_skill_confirm.htm',
   TRADE_BUY: 'http://210.140.157.168/mobile/card/mobile_trade_buy.htm',
   CHANGE_TRADE_SEARCH_SET: 'http://210.140.157.168/mobile/card/mobile_trade_search_set.json',
+  REFINE_CARD: 'http://210.140.157.168/mobile/card/mobile_refine_card.htm',
+  UPGRADE: 'http://210.140.157.168/mobile/card/mobile_upgrade_proc.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',
@@ -35,7 +37,5 @@ export default {
   TRADE_SELL: 'http://210.140.157.168/card/trade_sell.htm',
   NOTIFY: 'http://210.140.157.168/notify_update.htm',
   NOTIFY_BONUS: 'http://210.140.157.168/cattale/cattale_bonus_notify.htm',
-  REFINE_CARD: 'http://210.140.157.168/card/refine_card.htm',
-  REFINE_CARD_SUB: 'http://210.140.157.168/card/sub/refine_card.htm',
   REWARD_CARD_DETAIL: 'http://210.140.157.168/card/sub/get_reward_card_detail.htm'
 };

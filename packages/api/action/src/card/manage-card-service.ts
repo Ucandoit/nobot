@@ -1,5 +1,6 @@
 import {
   executeConcurrent,
+  getFinalPage,
   makeMobileRequest,
   makePostMobileRequest,
   NOBOT_MOBILE_URL,
@@ -137,6 +138,60 @@ export default class ManageCardService {
       },
       10
     );
+  };
+
+  refineQuest = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccountsNeedRefine();
+    await executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        this.logger.info('Start refine quest for %s', login);
+        const healCard = await this.findAccountCardByNumber(2103, login);
+        if (healCard.id > 0) {
+          const page = await makeMobileRequest(NOBOT_MOBILE_URL.REFINE_CARD, login);
+          const materialCardIds = this.getMaterialCardIds(page);
+          await executeConcurrent(
+            materialCardIds,
+            async (materialId: number) => {
+              this.logger.info('Refine %d by %d for %s', healCard.id, materialId, login);
+              const postData = `cat=3&mc=1&kind=2&tgt=0&from=0&catev=0&refitemid=0&refitemnum=0&card_id_1=${healCard.id}&trainer_id=${materialId}`;
+              await makePostMobileRequest(NOBOT_MOBILE_URL.UPGRADE, login, postData);
+              await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+            },
+            1
+          );
+          this.logger.info('Finish refine quest for %s', login);
+        } else {
+          this.logger.error('Unable to find refine card for %s', login);
+        }
+      },
+      10
+    );
+  };
+
+  private getMaterialCardIds = (page: CheerioStatic): number[] => {
+    const materialCardIds: number[] = [];
+    const trainerCards = page('#pool_4_list div[class^=trainer-card-id]');
+    if (trainerCards.length >= 10) {
+      let count = 0;
+      trainerCards.each((index) => {
+        if (count < 10) {
+          const trainerCard = trainerCards.eq(index);
+          const number = parseInt(trainerCard.find('span[class^=trainer-card-count]').text(), 10);
+          const id = regexUtils.catchByRegex(
+            trainerCard.attr('class'),
+            /(?<=trainer-card-id)[0-9]+/,
+            'integer'
+          ) as number;
+          // add n timers or until count reach 10
+          for (let i = 0; i < number && count + i < 10; i++) {
+            materialCardIds.push(id);
+          }
+          count += number;
+        }
+      });
+    }
+    return materialCardIds;
   };
 
   private findCardByNumber = async (

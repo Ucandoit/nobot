@@ -33,13 +33,6 @@ export default class CardController {
     res.status(200).send(await this.accountInfoService.getReserveCards(login as string));
   }
 
-  @RequestMapping('/refine/quest')
-  refineQuest(req: Request, res: Response): void {
-    const { login } = req.query;
-    this.accountService.refineQuest(login as string);
-    res.status(200).send();
-  }
-
   @RequestMapping('/updateNp')
   async updateNp(req: Request, res: Response): Promise<void> {
     const np = await this.accountService.updateNp();

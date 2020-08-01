@@ -24,4 +24,10 @@ export default class ManageCardController {
     this.manageCardService.learnSkillSample();
     res.status(200).send();
   }
+
+  @RequestMapping('/refineQuest')
+  async refineQuest(req: Request, res: Response): Promise<void> {
+    this.manageCardService.refineQuest();
+    res.status(200).send();
+  }
 }
