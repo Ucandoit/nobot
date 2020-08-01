@@ -8,7 +8,7 @@ import {
   regexUtils,
   Service
 } from '@nobot-core/commons';
-import { AccountRepository } from '@nobot-core/database';
+import { Account, AccountConfigRepository, AccountRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
 import countryConfig from './country-config';
@@ -27,8 +27,11 @@ export default class BattleService {
 
   private accountRepository: AccountRepository;
 
+  private accountConfigRepository: AccountConfigRepository;
+
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
+    this.accountConfigRepository = connection.getCustomRepository(AccountConfigRepository);
   }
 
   startAll = async (): Promise<void> => {
@@ -68,14 +71,53 @@ export default class BattleService {
     this.battleTasks.delete(login);
   };
 
+  checkBattleStatus = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccountsNeedBattle();
+    await executeConcurrent(
+      accounts,
+      async (account: Account) => {
+        this.logger.info('Checking friendship for %s.', account.login);
+        const friendships = await this.getFriendships(account.login);
+        let clear = true;
+        for (const [, level] of friendships) {
+          if (level === 0) {
+            clear = false;
+            return;
+          }
+        }
+        if (clear) {
+          this.logger.info('Finish battle goal for %s.', account.login);
+          await this.accountConfigRepository.update(account.login, { battleClear: true });
+        }
+      },
+      10
+    );
+    await this.startAll();
+  };
+
   startBattle = async (login: string): Promise<void> => {
     this.logger.info('Checking availability for %s.', login);
-    let page = await getFinalPage(NOBOT_MOBILE_URL.AREA_MAP, login);
+    let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+    let action = false;
+    const deckCards = page('#pool_1 div[class^=face-card-id]');
+    if (deckCards.length > 0) {
+      deckCards.each((i, card) => {
+        if (card.attribs.class.includes('action')) {
+          action = true;
+        }
+      });
+    }
+    if (action) {
+      this.logger.info('Deck cards in action for %s.', login);
+      this.stop(login);
+      return;
+    }
     const currentFood = parseInt(page('#element_food').text(), 10);
     page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_DECK, login);
     const deckFood = parseInt(page('.food').text(), 10);
     if (currentFood < deckFood) {
       this.logger.info('Not enough food for %s.', login);
+      this.stop(login);
       return;
     }
     const friendships = await this.getFriendships(login);

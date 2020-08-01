@@ -31,9 +31,9 @@ export default class BattleController {
   //   res.status(200).send(this.buildingService.status());
   // }
 
-  // @RequestMapping('/check')
-  // checkNeedBuilding(req: Request, res: Response): void {
-  //   this.buildingService.checkNeedBuilding();
-  //   res.status(200).send();
-  // }
+  @RequestMapping('/check')
+  checkBattleStatus(req: Request, res: Response): void {
+    this.battleService.checkBattleStatus();
+    res.status(200).send();
+  }
 }
