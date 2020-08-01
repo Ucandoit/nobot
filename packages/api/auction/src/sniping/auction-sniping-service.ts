@@ -7,6 +7,7 @@ import {
   Service
 } from '@nobot-core/commons';
 import { AuctionConfigRepository, AuctionHistory, AuctionHistoryRepository } from '@nobot-core/database';
+import he from 'he';
 import { getLogger } from 'log4js';
 import { Job, scheduleJob } from 'node-schedule';
 import { Connection } from 'typeorm';
@@ -82,13 +83,18 @@ export default class AuctionSnipingService {
         // get count from redis
         const countString = await redisClient.get(`sniping-count-${login}`);
         const count = countString ? parseInt(countString, 10) : 1;
-        if (count > 1999) {
+        if (count > 9999) {
           this.logger.info('Max times reached for %s.', login);
           job.cancel();
           return;
         }
         this.logger.info('Start sniping %d for %s', count, login);
         const page = await makeMobileRequest(NOBOT_MOBILE_URL.TRADE_BUY, login);
+        if (page('#main > center').first().html()?.includes(he.encode('頻度が高す'))) {
+          this.logger.warn('Abadonned for %s', login);
+          job.cancel();
+          return;
+        }
         const cardMessages = page('span[id^=message-buy]');
         if (cardMessages.length > 0) {
           const auctionCard = this.htmlToCard(cardMessages.first(), login);
