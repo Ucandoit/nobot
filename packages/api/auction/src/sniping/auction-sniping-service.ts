@@ -136,6 +136,10 @@ export default class AuctionSnipingService {
     };
   };
 
+  resetTimes = async (login: string): Promise<void> => {
+    await redisClient.del(`sniping-count-${login}`);
+  };
+
   private htmlToCard = (element: Cheerio, login: string): Partial<AuctionHistory | null> => {
     try {
       const cardDiv = element.prev().children().eq(0);

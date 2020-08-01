@@ -32,4 +32,11 @@ export default class AuctionSnipingController {
     this.auctionSnipingService.stopSniping(login as string);
     res.status(200).send();
   }
+
+  @RequestMapping('/reset')
+  reset(req: Request, res: Response): void {
+    const { login } = req.query;
+    this.auctionSnipingService.resetTimes(login as string);
+    res.status(200).send();
+  }
 }
