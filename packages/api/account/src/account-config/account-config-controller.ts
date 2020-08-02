@@ -34,7 +34,12 @@ export default class AccountConfigController {
 
   @RequestMapping('/initialize')
   async initialize(req: Request, res: Response): Promise<void> {
-    await this.accountConfigService.initializeAccountConfigs();
+    const login = getQueryParamAsString(req, 'login');
+    if (login) {
+      await this.accountConfigService.createAccountConfig(login);
+    } else {
+      await this.accountConfigService.initializeAccountConfigs();
+    }
     res.status(HttpStatus.OK).send();
   }
 

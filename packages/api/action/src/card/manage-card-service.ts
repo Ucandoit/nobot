@@ -220,7 +220,7 @@ export default class ManageCardService {
     return card;
   };
 
-  private moveCard = async (login: string, cardId: number): Promise<void> => {
+  moveCard = async (login: string, cardId: number): Promise<void> => {
     const page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_STORED_CARDS, login);
     const cardFace = page(`.face-card-id${cardId}`);
     if (cardFace.length > 0) {

@@ -8,8 +8,15 @@ export default class LoginController {
   @inject(LoginService) loginService: LoginService;
 
   @RequestMapping('/')
-  dailyLogin(req: Request, res: Response): void {
+  dailyLoginAll(req: Request, res: Response): void {
     this.loginService.dailyLoginAll();
+    res.status(200).send();
+  }
+
+  @RequestMapping('/:login')
+  async dailyLogin(req: Request, res: Response): Promise<void> {
+    const { login } = req.params;
+    await this.loginService.dailyLogin(login);
     res.status(200).send();
   }
 }

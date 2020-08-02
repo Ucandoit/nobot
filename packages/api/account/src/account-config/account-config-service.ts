@@ -33,10 +33,14 @@ export default class AccountConfigService {
     accounts.forEach(async (account) => {
       if (!account.accountConfig) {
         this.logger.info('Create account config for %s', account.login);
-        await this.accountConfigRepository.save({
-          login: account.login
-        });
+        await this.createAccountConfig(account.login);
       }
+    });
+  };
+
+  createAccountConfig = async (login: string): Promise<void> => {
+    await this.accountConfigRepository.save({
+      login
     });
   };
 

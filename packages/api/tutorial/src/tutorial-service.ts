@@ -1,4 +1,5 @@
 import { makeMobileRequest, makePostMobileRequest, NOBOT_MOBILE_URL, regexUtils, Service } from '@nobot-core/commons';
+import axios from 'axios';
 import { getLogger } from 'log4js';
 
 @Service()
@@ -18,6 +19,11 @@ export default class TutorialService {
     await this.fight2(login);
     await this.watchReplay(login);
     this.logger.info('Finish tutorial for %s.', login);
+    await axios.get(`http://action:3000/action/login/${login}`);
+    await axios.get(`http://action:3000/action/card/moveCard?login=${login}&cardId=1250`);
+    await axios.get(`http://action:3000/action/card/deckSample?login=${login}`);
+    await axios.get(`http://account:3000/accounts/configs/initialize?login=${login}`);
+    await axios.get(`http://action:3000/action/build/start/${login}`);
   };
 
   private fight = async (login: string): Promise<void> => {
