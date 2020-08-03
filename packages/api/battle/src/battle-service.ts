@@ -96,33 +96,39 @@ export default class BattleService {
   };
 
   startBattle = async (login: string): Promise<void> => {
-    this.logger.info('Checking availability for %s.', login);
-    let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
-    let action = false;
-    const deckCards = page('#pool_1 div[class^=face-card-id]');
-    if (deckCards.length > 0) {
-      deckCards.each((i, card) => {
-        if (card.attribs.class.includes('action')) {
-          action = true;
-        }
-      });
-    }
-    if (action) {
-      this.logger.info('Deck cards in action for %s.', login);
+    try {
+      this.logger.info('Checking availability for %s.', login);
+      let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+      let action = false;
+      const deckCards = page('#pool_1 div[class^=face-card-id]');
+      if (deckCards.length > 0) {
+        deckCards.each((i, card) => {
+          if (card.attribs.class.includes('action')) {
+            action = true;
+          }
+        });
+      }
+      if (action) {
+        this.logger.info('Deck cards in action for %s.', login);
+        this.stop(login);
+        return;
+      }
+      const currentFood = parseInt(page('#element_food').text(), 10);
+      page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_DECK, login);
+      const deckFood = parseInt(page('.food').text(), 10);
+      if (currentFood < deckFood) {
+        this.logger.info('Not enough food for %s.', login);
+        this.stop(login);
+        return;
+      }
+      const friendships = await this.getFriendships(login);
+      const targetCountry = this.getLowestFriendshipCountry(friendships, '');
+      await this.goToCountry(login, targetCountry);
+    } catch (err) {
+      this.logger.error('Error while starting battle for %s.', login);
+      this.logger.error(err);
       this.stop(login);
-      return;
     }
-    const currentFood = parseInt(page('#element_food').text(), 10);
-    page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_DECK, login);
-    const deckFood = parseInt(page('.food').text(), 10);
-    if (currentFood < deckFood) {
-      this.logger.info('Not enough food for %s.', login);
-      this.stop(login);
-      return;
-    }
-    const friendships = await this.getFriendships(login);
-    const targetCountry = this.getLowestFriendshipCountry(friendships, '');
-    await this.goToCountry(login, targetCountry);
   };
 
   getFriendships = async (login: string): Promise<Map<string, number>> => {
