@@ -1,9 +1,9 @@
 import { NobotApp } from '@nobot-core/commons';
 // import VillageService from './village/village-service';
 import { scheduleJob } from 'node-schedule';
+import AccountService from './account/account-service';
 // import ManageCardService from './card/manage-card-service';
 import BuildingService from './building/building-service';
-import LoginService from './login/login-service';
 import TrainingService from './training/training-service';
 
 (async function startApp(): Promise<void> {
@@ -11,9 +11,9 @@ import TrainingService from './training/training-service';
   await nobotApp.start();
   const buildingService = nobotApp.getContainer().get(BuildingService);
   // buildingService.startAll();
-  const loginService = nobotApp.getContainer().get(LoginService);
+  const accountService = nobotApp.getContainer().get(AccountService);
   const trainingService = nobotApp.getContainer().get(TrainingService);
-  scheduleJob('0 5 15 * * *', loginService.dailyLoginAll);
+  scheduleJob('0 5 15 * * *', accountService.dailyLoginAll);
   scheduleJob('0 10 15 * * *', buildingService.checkNeedBuilding);
   scheduleJob('0 15 15 * * *', trainingService.checkNeedTraining);
   // const manageCardService = nobotApp.getContainer().get(ManageCardService);

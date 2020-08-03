@@ -19,7 +19,7 @@ export default class TutorialService {
     await this.fight2(login);
     await this.watchReplay(login);
     this.logger.info('Finish tutorial for %s.', login);
-    await axios.get(`http://action:3000/action/login/${login}`);
+    await axios.get(`http://action:3000/action/account/login/${login}`);
     await axios.get(`http://action:3000/action/card/moveCard?login=${login}&cardId=1250`);
     await axios.get(`http://action:3000/action/card/deckSample?login=${login}`);
     await axios.get(`http://account:3000/accounts/configs/initialize?login=${login}`);
