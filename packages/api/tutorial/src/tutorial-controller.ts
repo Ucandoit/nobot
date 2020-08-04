@@ -12,4 +12,10 @@ export default class TutorialController {
     this.tutorialService.start(req.params.login);
     res.status(200).send();
   }
+
+  @RequestMapping('/post/:login')
+  async postTutorial(req: Request, res: Response): Promise<void> {
+    this.tutorialService.postTutorial(req.params.login);
+    res.status(200).send();
+  }
 }

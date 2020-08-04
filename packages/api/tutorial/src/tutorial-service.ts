@@ -19,6 +19,10 @@ export default class TutorialService {
     await this.fight2(login);
     await this.watchReplay(login);
     this.logger.info('Finish tutorial for %s.', login);
+    this.postTutorial(login);
+  };
+
+  postTutorial = async (login: string): Promise<void> => {
     await axios.get(`http://action:3000/action/account/login/${login}`);
     await axios.get(`http://action:3000/action/card/moveCard?login=${login}&cardId=1250`);
     await axios.get(`http://action:3000/action/card/deckSample?login=${login}`);
