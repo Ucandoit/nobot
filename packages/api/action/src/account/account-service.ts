@@ -80,4 +80,14 @@ export default class AccountService {
     }
     return false;
   };
+
+  recruit = async (recruiter: string, candidate: string): Promise<void> => {
+    const account = await this.accountRepository.findOne(recruiter);
+    if (account && account.recruitId) {
+      await makePostMobileRequest(NOBOT_MOBILE_URL.FRIEND_CODE, candidate, `friendCode=${account.recruitId}`);
+      this.logger.info('Recruit %s by %s.', candidate, recruiter);
+    } else {
+      this.logger.warn('Account %s not found or does not have recruit id.', recruiter);
+    }
+  };
 }

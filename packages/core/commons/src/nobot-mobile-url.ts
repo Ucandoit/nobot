@@ -30,6 +30,7 @@ export default {
   REFINE_CARD: 'http://210.140.157.168/mobile/card/mobile_refine_card.htm',
   UPGRADE: 'http://210.140.157.168/mobile/card/mobile_upgrade_proc.htm',
   COMEBACK_LIST: 'http://210.140.157.168/mobile/user/mobile_comeback_recommend_list.htm',
+  FRIEND_CODE: 'http://210.140.157.168/mobile/user/friend/mobile_friend_code.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',

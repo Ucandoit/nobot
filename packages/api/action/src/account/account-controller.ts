@@ -1,4 +1,4 @@
-import { Controller, HttpStatus, RequestMapping } from '@nobot-core/commons';
+import { Controller, getQueryParamAsString, HttpStatus, RequestMapping } from '@nobot-core/commons';
 import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import AccountService from './account-service';
@@ -23,6 +23,14 @@ export default class AccountController {
   @RequestMapping('/comeback')
   comeback(req: Request, res: Response): void {
     this.accountService.comebackAll();
+    res.status(HttpStatus.OK).send();
+  }
+
+  @RequestMapping('/recruit')
+  recruit(req: Request, res: Response): void {
+    const recruiter = getQueryParamAsString(req, 'recruiter') as string;
+    const candidate = getQueryParamAsString(req, 'candidate') as string;
+    this.accountService.recruit(recruiter, candidate);
     res.status(HttpStatus.OK).send();
   }
 }
