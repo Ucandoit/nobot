@@ -35,5 +35,5 @@ projectName: api_battle
 <<: !config config
 
 ---
-projectName: api_war
-<<: !config config
+  projectName: api_event
+  <<: !config config

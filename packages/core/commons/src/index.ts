@@ -1,6 +1,7 @@
 export { default as loadProjectConfig } from './config-loader';
 export * from './decorators';
 export * from './exceptions';
+export * from './multi-task';
 export { default as NobotApp } from './nobot-app';
 export { default as NOBOT_MOBILE_URL } from './nobot-mobile-url';
 export * from './nobot-request';
