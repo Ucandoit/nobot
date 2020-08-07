@@ -254,7 +254,7 @@ export default class WarService {
             await makePostMobileRequest(
               form.attr('action') as string,
               login,
-              `${form.serialize()}${warConfig.npc ? '&npc=1' : ''}`,
+              `${form.serialize()}${lastDay && warConfig.npc ? '&npc=1' : ''}`,
               false
             );
           } catch (err) {
