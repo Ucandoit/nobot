@@ -194,7 +194,33 @@ export default class ManageCardService {
     return materialCardIds;
   };
 
-  private findCardByNumber = async (
+  // private findCardByNumber = async (
+  //   number: number,
+  //   login: string,
+  //   inDeck: boolean
+  // ): Promise<{ id: number; inDeck: boolean }> => {
+  //   const card = {
+  //     id: -1,
+  //     inDeck
+  //   };
+  //   const page = await makeMobileRequest(
+  //     inDeck ? NOBOT_MOBILE_URL.MANAGE_DECK_CARDS : NOBOT_MOBILE_URL.MANAGE_RESERVE_CARDS,
+  //     login
+  //   );
+  //   const checkboxes = page('input[name=ids]');
+  //   for (let i = 0; i < checkboxes.length; i++) {
+  //     const checkbox = checkboxes.eq(i);
+  //     const numberText = checkbox.parent().next().children().first().text();
+  //     if (number === parseInt(numberText.replace('No.', ''), 10)) {
+  //       card.id = parseInt(checkbox.val(), 10);
+  //       card.inDeck = true;
+  //       break;
+  //     }
+  //   }
+  //   return card;
+  // };
+
+  public findCardByNumber = async (
     number: number,
     login: string,
     inDeck: boolean
@@ -207,12 +233,12 @@ export default class ManageCardService {
       inDeck ? NOBOT_MOBILE_URL.MANAGE_DECK_CARDS : NOBOT_MOBILE_URL.MANAGE_RESERVE_CARDS,
       login
     );
-    const checkboxes = page('input[name=ids]');
-    for (let i = 0; i < checkboxes.length; i++) {
-      const checkbox = checkboxes.eq(i);
-      const numberText = checkbox.parent().next().children().first().text();
+    const faces = page('img[class*=face-card-id]');
+    for (let i = 0; i < faces.length; i++) {
+      const face = faces.eq(i);
+      const numberText = face.parents('table').last().prev().children().first().text();
       if (number === parseInt(numberText.replace('No.', ''), 10)) {
-        card.id = parseInt(checkbox.val(), 10);
+        card.id = regexUtils.catchByRegex(face.attr('class'), /(?<=face-card-id)[0-9]+/, 'integer') as number;
         card.inDeck = true;
         break;
       }

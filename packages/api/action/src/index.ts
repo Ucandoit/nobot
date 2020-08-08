@@ -2,8 +2,8 @@ import { NobotApp } from '@nobot-core/commons';
 // import VillageService from './village/village-service';
 import { scheduleJob } from 'node-schedule';
 import AccountService from './account/account-service';
-// import ManageCardService from './card/manage-card-service';
 import BuildingService from './building/building-service';
+// import ManageCardService from './card/manage-card-service';
 import TrainingService from './training/training-service';
 
 (async function startApp(): Promise<void> {
