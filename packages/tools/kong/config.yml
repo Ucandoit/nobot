@@ -1,0 +1,11 @@
+_format_version: '2.1'
+_transform: true
+
+services:
+- name: card
+  url: http://card:3000
+  routes:
+  - name: cards
+    strip_path: false
+    paths:
+    - /cards
