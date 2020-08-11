@@ -4,6 +4,7 @@ export default {
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',
   CATTALE_POINT_REWARD: 'http://210.140.157.168/cattale/point_reward_list.htm',
+  CATTLE_RECRUIT: 'http://210.140.157.168/cattale/recruit_rental_card.htm',
   FINISH_MOVE: 'http://210.140.157.168/command/sp_finish_move.json',
   TRADE: 'http://210.140.157.168/trade.htm',
   TRADE_BUY: 'http://210.140.157.168/card/trade_buy.htm',

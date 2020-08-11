@@ -268,7 +268,7 @@ export default class StoryService {
     await makeRequest(NOBOT_URL.MANAGE_DECK, 'POST', login, form.serialize());
   };
 
-  private getChapterReward = async (login: string): Promise<void> => {
+  public getChapterReward = async (login: string): Promise<void> => {
     await this.getReward(login, NOBOT_URL.CATTALE_CHAPTER_REWARD);
   };
 
@@ -291,9 +291,14 @@ export default class StoryService {
   private claimReward = async (postData: string, url: string, login: string): Promise<void> => {
     const location = await makeRequest(url, 'POST', login, postData);
     if (typeof location === 'string' && location.includes('get_cattale_rental_card')) {
-      this.logger.info('Choose card reward for %s.', login);
       const [nextUrl, params] = location.split('?');
-      await makeRequest(nextUrl, 'POST', login, params);
+      if (login.startsWith('zyk') || login.startsWith('zz')) {
+        this.logger.info('Choose card recruit for %s.', login);
+        await makeRequest(NOBOT_URL.CATTLE_RECRUIT, 'POST', login, params);
+      } else {
+        this.logger.info('Choose card reward for %s.', login);
+        await makeRequest(nextUrl, 'POST', login, params);
+      }
     }
   };
 }
