@@ -1,4 +1,11 @@
-import { Controller, getQueryParamAsInt, getQueryParamAsString, HttpStatus, RequestMapping } from '@nobot-core/commons';
+import {
+  Controller,
+  getQueryParamAsInt,
+  getQueryParamAsString,
+  HttpException,
+  HttpStatus,
+  RequestMapping
+} from '@nobot-core/commons';
 import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import WarConfigService from './war-config-service';
@@ -11,6 +18,20 @@ export default class WarController {
   initialize(req: Request, res: Response): void {
     this.warConfigService.initializeWarConfigs();
     res.status(HttpStatus.OK).send();
+  }
+
+  @RequestMapping('/warFields')
+  async getWarFields(req: Request, res: Response): Promise<void> {
+    try {
+      const warFields = await this.warConfigService.getWarFields();
+      res.status(HttpStatus.OK).send(warFields);
+    } catch (e) {
+      if (e instanceof HttpException) {
+        res.status(e.getStatus()).send(e.getMessage());
+      } else {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
+      }
+    }
   }
 
   // TODO: change method to post

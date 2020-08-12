@@ -6,6 +6,6 @@ export default class Parameter {
   @Column('character varying', { primary: true, name: 'code', length: 32 })
   code: string;
 
-  @Column('character varying', { name: 'value', length: 32 })
+  @Column('character varying', { name: 'value', length: 1024 })
   value: string;
 }

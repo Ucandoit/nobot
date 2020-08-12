@@ -1,4 +1,5 @@
 import { NobotApp } from '@nobot-core/commons';
+import WarConfigService from './war/war-config-service';
 // import CountryBattleService from './country-battle/country-battle-service';
 
 (async function startApp(): Promise<void> {
@@ -6,4 +7,6 @@ import { NobotApp } from '@nobot-core/commons';
   await nobotApp.start();
   // const countryBattleService = nobotApp.getContainer().get(CountryBattleService);
   // countryBattleService.startCountryBattle('zz0001');
+  const warConfigService = nobotApp.getContainer().get(WarConfigService);
+  warConfigService.checkWarByLogin('zzz_001');
 })();
