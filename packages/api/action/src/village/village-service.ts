@@ -6,12 +6,15 @@ import { Building, MapArea, ResourceCost, ResourceInfo } from '../types';
 interface CardFace {
   id: number;
   faceUrl: string;
+  action: boolean;
+  trading: boolean;
 }
 
 interface VillageInfo {
   resourceInfo: ResourceInfo;
   areas: MapArea[];
   deckCards: CardFace[];
+  reserveCards: CardFace[];
 }
 
 @Service()
@@ -24,7 +27,8 @@ export default class VillageService {
     return {
       resourceInfo: this.getResourceInfo(page),
       areas: this.getMapInfo(page),
-      deckCards: this.getDeckCards(page)
+      deckCards: this.getCards(page, true),
+      reserveCards: this.getCards(page, false)
     };
   };
 
@@ -68,17 +72,31 @@ export default class VillageService {
     };
   };
 
-  getDeckCards = (page: CheerioStatic): CardFace[] => {
-    const deckCards: CardFace[] = [];
-    const cards = page('#pool_1 .reserve-face');
-    for (let i = 0; i < cards.length; i++) {
-      const card = cards.eq(i);
-      deckCards.push({
-        id: regexUtils.catchByRegex(card.attr('class'), /(?<=face-card-id)[0-9]+/) as number,
-        faceUrl: card.children().first().attr('src') as string
+  getCards = (page: CheerioStatic, inDeck: boolean): CardFace[] => {
+    const cards: CardFace[] = [];
+    const cardElements = page(inDeck ? '#pool_1 .reserve-face' : '#pool_2 .reserve-face, #pool_3 .reserve-face');
+    for (let i = 0; i < cardElements.length; i++) {
+      const cardElement = cardElements.eq(i);
+      const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=face-card-id)[0-9]+/) as number;
+      const faceUrl = cardElement.children().first().attr('src') as string;
+      let action = false;
+      let trading = false;
+      if (cardElement.attr('class')?.includes('action')) {
+        const actionImgUrl = cardElement.children().eq(1).attr('src');
+        if (actionImgUrl?.includes('action_01')) {
+          action = true;
+        } else if (actionImgUrl?.includes('action_02')) {
+          trading = true;
+        }
+      }
+      cards.push({
+        id,
+        faceUrl,
+        action,
+        trading
       });
     }
-    return deckCards;
+    return cards;
   };
 
   costEnough = (resourceCost: ResourceCost, resourceInfo: ResourceInfo): boolean => {
