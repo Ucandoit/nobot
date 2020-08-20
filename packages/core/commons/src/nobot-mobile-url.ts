@@ -33,6 +33,8 @@ export default {
   FRIEND_CODE: 'http://210.140.157.168/mobile/user/friend/mobile_friend_code.htm',
   GATE: 'http://210.140.157.168/mobile/village/mobile_gate_cat.htm?buildIdx=4',
   GATE_CONFIRM: 'http://210.140.157.168/mobile/village/mobile_gate_confirm.htm?buildIdx=4',
+  TERRITORY_MANAGE_DECK: 'http://210.140.157.168/mobile/unity/mobile_unity_manage_deck.htm',
+  TERRITORY_INFO: 'http://210.140.157.168/mobile/unity/mobile_unity_territory_info.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',
