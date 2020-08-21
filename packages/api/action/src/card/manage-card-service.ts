@@ -7,7 +7,7 @@ import {
   regexUtils,
   Service
 } from '@nobot-core/commons';
-import { AccountRepository } from '@nobot-core/database';
+import { AccountRepository, DeckConfigRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
 
@@ -22,8 +22,11 @@ export default class ManageCardService {
 
   private accountRepository: AccountRepository;
 
+  private deckConfigRepository: DeckConfigRepository;
+
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
+    this.deckConfigRepository = connection.getCustomRepository(DeckConfigRepository);
   }
 
   moveSampleCard = async (): Promise<void> => {
@@ -194,32 +197,6 @@ export default class ManageCardService {
     return materialCardIds;
   };
 
-  // private findCardByNumber = async (
-  //   number: number,
-  //   login: string,
-  //   inDeck: boolean
-  // ): Promise<{ id: number; inDeck: boolean }> => {
-  //   const card = {
-  //     id: -1,
-  //     inDeck
-  //   };
-  //   const page = await makeMobileRequest(
-  //     inDeck ? NOBOT_MOBILE_URL.MANAGE_DECK_CARDS : NOBOT_MOBILE_URL.MANAGE_RESERVE_CARDS,
-  //     login
-  //   );
-  //   const checkboxes = page('input[name=ids]');
-  //   for (let i = 0; i < checkboxes.length; i++) {
-  //     const checkbox = checkboxes.eq(i);
-  //     const numberText = checkbox.parent().next().children().first().text();
-  //     if (number === parseInt(numberText.replace('No.', ''), 10)) {
-  //       card.id = parseInt(checkbox.val(), 10);
-  //       card.inDeck = true;
-  //       break;
-  //     }
-  //   }
-  //   return card;
-  // };
-
   public findCardByNumber = async (
     number: number,
     login: string,
@@ -263,6 +240,39 @@ export default class ManageCardService {
       this.logger.error('Error while move card %d for %s.', cardId, login);
     } else {
       this.logger.error('Card %d not found for %s.', cardId, login);
+    }
+  };
+
+  toggleFavorite = async (login: string, cardId: string, favorite: boolean): Promise<void> => {
+    this.logger.info(
+      '%s card %s %s favorite for %s.',
+      favorite ? 'Add' : 'Remove',
+      cardId,
+      favorite ? 'to' : 'from',
+      login
+    );
+    const deckConfig = await this.deckConfigRepository.findOne(login);
+    if (deckConfig) {
+      const favoriteCardIds = deckConfig.favoriteCardIds?.split(',') ?? [];
+      if (favorite) {
+        if (!favoriteCardIds.includes(cardId)) {
+          favoriteCardIds.push(cardId);
+        }
+      } else {
+        const index = favoriteCardIds.indexOf(cardId);
+        if (index > -1) {
+          favoriteCardIds.splice(index, 1);
+        }
+      }
+      await this.deckConfigRepository.update(login, {
+        favoriteCardIds: favoriteCardIds.join(',')
+      });
+    } else if (favorite) {
+      // if favorite = true, create deck config
+      await this.deckConfigRepository.save({
+        login,
+        favoriteCardIds: `${cardId}`
+      });
     }
   };
 

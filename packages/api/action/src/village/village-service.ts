@@ -1,5 +1,7 @@
 import { getFinalPage, NOBOT_MOBILE_URL, regexUtils, Service } from '@nobot-core/commons';
+import { DeckConfigRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
+import { Connection } from 'typeorm';
 import buildConfig from '../building/build-config';
 import { Building, MapArea, ResourceCost, ResourceInfo } from '../types';
 
@@ -8,6 +10,7 @@ interface CardFace {
   faceUrl: string;
   action: boolean;
   trading: boolean;
+  favorite: boolean;
 }
 
 interface VillageInfo {
@@ -21,14 +24,20 @@ interface VillageInfo {
 export default class VillageService {
   private logger = getLogger(VillageService.name);
 
+  private deckConfigRepository: DeckConfigRepository;
+
+  constructor(connection: Connection) {
+    this.deckConfigRepository = connection.getCustomRepository(DeckConfigRepository);
+  }
+
   getVillage = async (login: string): Promise<VillageInfo> => {
     this.logger.info('get village info of %s', login);
     const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
     return {
       resourceInfo: this.getResourceInfo(page),
       areas: this.getMapInfo(page),
-      deckCards: this.getCards(page, true),
-      reserveCards: this.getCards(page, false)
+      deckCards: await this.getCards(page, true, login),
+      reserveCards: await this.getCards(page, false, login)
     };
   };
 
@@ -72,8 +81,10 @@ export default class VillageService {
     };
   };
 
-  getCards = (page: CheerioStatic, inDeck: boolean): CardFace[] => {
+  getCards = async (page: CheerioStatic, inDeck: boolean, login: string): Promise<CardFace[]> => {
     const cards: CardFace[] = [];
+    const deckConfig = await this.deckConfigRepository.findOne(login);
+    const favoriteCardIds = deckConfig?.favoriteCardIds?.split(',') ?? [];
     const cardElements = page(inDeck ? '#pool_1 .reserve-face' : '#pool_2 .reserve-face, #pool_3 .reserve-face');
     for (let i = 0; i < cardElements.length; i++) {
       const cardElement = cardElements.eq(i);
@@ -93,7 +104,8 @@ export default class VillageService {
         id,
         faceUrl,
         action,
-        trading
+        trading,
+        favorite: favoriteCardIds.includes(id.toString())
       });
     }
     return cards;

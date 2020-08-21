@@ -9,6 +9,10 @@ export const getQueryParamAsInt = (req: Request, property: string): number | und
   return stringValue !== undefined ? parseInt(stringValue, 10) : undefined;
 };
 
+export const getQueryParamAsBoolean = (req: Request, property: string): boolean => {
+  return req.query[property] === 'true';
+};
+
 export const executeConcurrent = async <T>(
   array: T[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

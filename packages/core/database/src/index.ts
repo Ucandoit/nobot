@@ -6,6 +6,7 @@ import {
   AuctionConfig,
   AuctionHistory,
   Card,
+  DeckConfig,
   Parameter,
   SellState,
   Skill,
@@ -41,7 +42,8 @@ const initConnection = async (options: PostgresConnectionOptions): Promise<Conne
       SellState,
       AccountConfig,
       WarConfig,
-      Skill
+      Skill,
+      DeckConfig
     ],
     logging: false,
     ...options

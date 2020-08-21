@@ -1,4 +1,11 @@
-import { Controller, getQueryParamAsInt, getQueryParamAsString, HttpStatus, RequestMapping } from '@nobot-core/commons';
+import {
+  Controller,
+  getQueryParamAsBoolean,
+  getQueryParamAsInt,
+  getQueryParamAsString,
+  HttpStatus,
+  RequestMapping
+} from '@nobot-core/commons';
 import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import { getLogger } from 'log4js';
@@ -50,5 +57,22 @@ export default class ManageCardController {
   async refineQuest(req: Request, res: Response): Promise<void> {
     this.manageCardService.refineQuest();
     res.status(HttpStatus.OK).send();
+  }
+
+  @RequestMapping('/toggleFavorite')
+  async toggleFavorite(req: Request, res: Response): Promise<void> {
+    try {
+      const login = getQueryParamAsString(req, 'login');
+      const cardId = getQueryParamAsString(req, 'cardId');
+      const favorite = getQueryParamAsBoolean(req, 'favorite');
+      if (login && cardId) {
+        await this.manageCardService.toggleFavorite(login, cardId, favorite);
+        res.status(HttpStatus.OK).send();
+      } else {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
+      }
+    } catch (err) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
+    }
   }
 }
