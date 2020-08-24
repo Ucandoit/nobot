@@ -85,7 +85,7 @@ export default class TerritoryBattleService {
     await executeConcurrent(
       accounts.map((account) => account.login),
       async (login: string) => {
-        if (login.startsWith('zzz')) {
+        if (login.startsWith('zzz_00')) {
           await this.heal(login);
         }
       },

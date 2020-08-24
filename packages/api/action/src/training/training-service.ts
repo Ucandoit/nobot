@@ -1,18 +1,19 @@
 import {
+  asyncForEach,
   executeConcurrent,
   getFinalPage,
   makePostMobileRequest,
   nobotUtils,
   NOBOT_MOBILE_URL,
+  regexUtils,
   Service
 } from '@nobot-core/commons';
-import { AccountConfigRepository, AccountRepository } from '@nobot-core/database';
+import { AccountConfigRepository, AccountRepository, DeckConfigRepository } from '@nobot-core/database';
 import encoding from 'encoding-japanese';
 import he from 'he';
 import { inject } from 'inversify';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
-import ManageCardService from '../card/manage-card-service';
 import { ResourceCost, Training } from '../types';
 import VillageService from '../village/village-service';
 import trainingConfig from './training-config';
@@ -29,18 +30,18 @@ export default class TrainingService {
   @inject(VillageService)
   private villageService: VillageService;
 
-  @inject(ManageCardService)
-  private manageCardService: ManageCardService;
-
   private accountRepository: AccountRepository;
 
   private accountConfigRepository: AccountConfigRepository;
+
+  private deckConfigRepository: DeckConfigRepository;
 
   private trainingTasks = new Map<number, TrainingTask>();
 
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
     this.accountConfigRepository = connection.getCustomRepository(AccountConfigRepository);
+    this.deckConfigRepository = connection.getCustomRepository(DeckConfigRepository);
   }
 
   trainingSample = async (): Promise<void> => {
@@ -48,30 +49,43 @@ export default class TrainingService {
     await executeConcurrent(
       accounts.map((account) => account.login),
       async (login: string) => {
-        const atkCard = await this.manageCardService.findAccountCardByNumber(2088, login);
-        if (atkCard.id > 0) {
-          const cardInfo = await this.getCardInfo(atkCard.id, login);
-          let training: Training = 'fire';
-          if (cardInfo.fire === 20) {
-            training = 'earth';
-            if (cardInfo.earth === 20) {
-              training = 'wind';
-            }
-          }
-          this.start(login, atkCard.id, training);
+        const deckConfig = await this.deckConfigRepository.findOne(login);
+        const favoriteCardIds = deckConfig?.favoriteCardIds?.split(',') ?? [];
+        if (favoriteCardIds.length === 0) {
+          this.logger.warn('No favorite cards found for %s.', login);
+          return;
         }
-        const healCard = await this.manageCardService.findAccountCardByNumber(2103, login);
-        if (healCard.id > 0) {
-          const cardInfo = await this.getCardInfo(healCard.id, login);
-          let training: Training = 'water';
-          if (cardInfo.water === 20) {
-            training = 'sky';
-            if (cardInfo.sky === 20) {
+
+        await asyncForEach(favoriteCardIds, async (cardId: string) => {
+          const cardInfo = await this.getCardInfo(parseInt(cardId, 10), login);
+          let training: Training | undefined;
+          if (cardInfo.propertyCode === 0) {
+            training = 'fire';
+            if (cardInfo.fire === 20) {
               training = 'earth';
+              if (cardInfo.earth === 20) {
+                training = 'wind';
+                if (cardInfo.wind === 20) {
+                  training = 'sky';
+                }
+              }
+            }
+          } else if (cardInfo.propertyCode === 3) {
+            training = 'water';
+            if (cardInfo.water === 20) {
+              training = 'sky';
+              if (cardInfo.sky === 20) {
+                training = 'earth';
+                if (cardInfo.earth === 20) {
+                  training = 'wind';
+                }
+              }
             }
           }
-          this.start(login, healCard.id, training);
-        }
+          if (training) {
+            await this.start(login, cardInfo.id, training);
+          }
+        });
       },
       10
     );
@@ -179,20 +193,20 @@ export default class TrainingService {
       accounts.map((account) => account.login),
       async (login: string) => {
         let training = false;
-        const atkCard = await this.manageCardService.findAccountCardByNumber(2088, login);
-        if (atkCard.id > 0) {
-          const cardInfo = await this.getCardInfo(atkCard.id, login);
+        const deckConfig = await this.deckConfigRepository.findOne(login);
+        const favoriteCardIds = deckConfig?.favoriteCardIds?.split(',') ?? [];
+        if (favoriteCardIds.length === 0) {
+          this.logger.warn('No favorite cards found for %s.', login);
+          return;
+        }
+
+        await asyncForEach(favoriteCardIds, async (cardId: string) => {
+          const cardInfo = await this.getCardInfo(parseInt(cardId, 10), login);
           if (cardInfo.refineCurrent < cardInfo.refineMax) {
             training = true;
           }
-        }
-        const healCard = await this.manageCardService.findAccountCardByNumber(2103, login);
-        if (healCard.id > 0) {
-          const cardInfo = await this.getCardInfo(healCard.id, login);
-          if (cardInfo.refineCurrent < cardInfo.refineMax) {
-            training = true;
-          }
-        }
+        });
+
         if (!training) {
           this.logger.info('Account %s has finished training all.', login);
           await this.accountConfigRepository.update(login, { status: 'FINISH' });
@@ -221,7 +235,12 @@ export default class TrainingService {
       wind: parseInt(page('.card-refine-spd').text().replace('Lv', ''), 10),
       water: parseInt(page('.card-refine-vir').text().replace('Lv', ''), 10),
       sky: parseInt(page('.card-refine-stg').text().replace('Lv', ''), 10),
-      inAction: page('.card').attr('class')?.includes('is-action')
+      inAction: page('.card').attr('class')?.includes('is-action'),
+      propertyCode: regexUtils.catchByRegex(
+        page('.card-property').attr('src'),
+        /(?<=elements_0)[0-9]/,
+        'integer'
+      ) as number
     };
   };
 }

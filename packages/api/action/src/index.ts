@@ -23,5 +23,4 @@ import TrainingService from './training/training-service';
   // console.log(await villageService.getVillage('zz0001'));
   // trainingService.training('xzdykerik_04', 36635786, 'earth', 20);
   // trainingService.start('xzdykerik_04', 44832577, 'sky', 9);
-  // trainingService.trainingSample();
 })();
