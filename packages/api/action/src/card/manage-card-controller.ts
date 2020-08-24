@@ -63,7 +63,7 @@ export default class ManageCardController {
   async toggleFavorite(req: Request, res: Response): Promise<void> {
     try {
       const login = getQueryParamAsString(req, 'login');
-      const cardId = getQueryParamAsString(req, 'cardId');
+      const cardId = getQueryParamAsInt(req, 'cardId');
       const favorite = getQueryParamAsBoolean(req, 'favorite');
       if (login && cardId) {
         await this.manageCardService.toggleFavorite(login, cardId, favorite);
