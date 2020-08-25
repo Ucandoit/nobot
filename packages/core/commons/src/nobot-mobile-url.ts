@@ -35,6 +35,7 @@ export default {
   GATE_CONFIRM: 'http://210.140.157.168/mobile/village/mobile_gate_confirm.htm?buildIdx=4',
   TERRITORY_MANAGE_DECK: 'http://210.140.157.168/mobile/unity/mobile_unity_manage_deck.htm',
   TERRITORY_INFO: 'http://210.140.157.168/mobile/unity/mobile_unity_territory_info.htm',
+  ITEMBOX: 'http://210.140.157.168/mobile/user/mobile_itembox.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',
