@@ -1,4 +1,4 @@
-import { Controller, getQueryParamAsInt, getQueryParamAsString, RequestMapping } from '@nobot-core/commons';
+import { Controller, getQueryParamAsInt, getQueryParamAsString, HttpStatus, RequestMapping } from '@nobot-core/commons';
 import { Request, Response } from 'express';
 import { inject } from 'inversify';
 import WarService from './war-service';
@@ -22,10 +22,31 @@ export default class WarController {
   @RequestMapping('/start')
   start(req: Request, res: Response): void {
     const group = getQueryParamAsString(req, 'group');
+    const login = getQueryParamAsString(req, 'login');
     if (group) {
       this.warService.startByGroup(group);
+      res.status(HttpStatus.OK).send();
+    } else if (login) {
+      this.warService.start(login);
+      res.status(HttpStatus.OK).send();
+    } else {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('The request must have <group> or <login> in query.');
     }
-    res.status(200).send();
+  }
+
+  @RequestMapping('/stop')
+  stop(req: Request, res: Response): void {
+    const group = getQueryParamAsString(req, 'group');
+    const login = getQueryParamAsString(req, 'login');
+    if (group) {
+      this.warService.stopByGroup(group);
+      res.status(HttpStatus.OK).send();
+    } else if (login) {
+      this.warService.stop(login);
+      res.status(HttpStatus.OK).send();
+    } else {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('The request must have <group> or <login> in query.');
+    }
   }
 
   @RequestMapping('/field')

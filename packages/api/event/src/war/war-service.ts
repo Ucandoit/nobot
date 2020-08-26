@@ -158,6 +158,13 @@ export default class WarService {
     );
   };
 
+  stopByGroup = async (group: string): Promise<void> => {
+    const warConfigs = await this.warConfigRepository.findByGroup(group);
+    warConfigs.forEach((warConfig) => {
+      this.stop(warConfig.login);
+    });
+  };
+
   start = async (login: string): Promise<void> => {
     const task = this.warTasks.get(login);
     if (task && task.start) {
@@ -264,7 +271,7 @@ export default class WarService {
             await makePostMobileRequest(
               form.attr('action') as string,
               login,
-              `${form.serialize()}${warConfig.npc ? '&npc=1' : ''}`,
+              `${form.serialize()}${lastDay && warConfig.npc ? '&npc=1' : ''}`,
               false
             );
           }
