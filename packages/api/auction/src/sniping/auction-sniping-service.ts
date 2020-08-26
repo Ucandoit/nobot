@@ -215,6 +215,8 @@ export default class AuctionSnipingService {
     let hour = startHour + offset;
     if (hour < 0) {
       hour += 24;
+    }
+    if (hour >= 15) {
       return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0);
     }
     const nextDay = new Date(now);
