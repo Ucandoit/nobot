@@ -105,6 +105,7 @@ services:
       - '4004:3000'
     environment:
       CONFIG_PROFILE: ${CONFIG_PROFILE}
+      HOUR_OFFSET: ${HOUR_OFFSET}
   story:
     build:
       context: ./

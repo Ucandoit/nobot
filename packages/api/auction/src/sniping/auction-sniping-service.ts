@@ -44,7 +44,10 @@ export default class AuctionSnipingService {
     this.logger.info('Start all auction sniping.');
     const auctionConfigs = await this.auctionConfigRepository.getEnabledAuctionConfigs();
     const now = new Date();
-    const offset = -9;
+    let offset = -9;
+    if (process.env.HOUR_OFFSET) {
+      offset += parseInt(process.env.HOUR_OFFSET, 10);
+    }
     auctionConfigs.forEach((auctionConfig) => {
       const startTime = this.calculateStartTime(auctionConfig.startHour, now, offset);
       const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
@@ -83,7 +86,7 @@ export default class AuctionSnipingService {
         // get count from redis
         const countString = await redisClient.get(`sniping-count-${login}`);
         const count = countString ? parseInt(countString, 10) : 1;
-        if (count > 9999) {
+        if (count > 3950) {
           this.logger.info('Max times reached for %s.', login);
           job.cancel();
           return;
