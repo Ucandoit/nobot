@@ -1,5 +1,6 @@
-import { executeConcurrent, getFinalPage, NOBOT_MOBILE_URL, Service } from '@nobot-core/commons';
+import { executeConcurrent, getFinalPage, makePostMobileRequest, NOBOT_MOBILE_URL, Service } from '@nobot-core/commons';
 import { Account, AccountRepository } from '@nobot-core/database';
+import axios from 'axios';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm/connection/Connection';
 
@@ -36,11 +37,14 @@ export default class AccountService {
     await executeConcurrent(
       accounts,
       async (account: Account) => {
-        const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, account.login);
-        const np = parseInt(page('span#lottery_point').text(), 10);
-        await this.accountRepository.update(account.login, { np });
+        try {
+          const np = await this.getNp(account.login);
+          await this.accountRepository.update(account.login, { np });
+        } catch (err) {
+          this.logger.error(err);
+        }
       },
-      10
+      30
     );
     this.logger.info('Stop update np.');
     return this.calculateNp();
@@ -49,5 +53,47 @@ export default class AccountService {
   calculateNp = async (): Promise<number> => {
     const accounts = await this.accountRepository.getMobileAccounts();
     return accounts.reduce((total: number, account: Account) => total + account.np, 0);
+  };
+
+  tradeNp = async (buyer: string, seller: string): Promise<void> => {
+    this.logger.info('trade np from %s to %s.', buyer, seller);
+    try {
+      const np = await this.getNp(buyer);
+      await this.postTradeCard(seller, np);
+    } catch (err) {
+      this.logger.error(err);
+    }
+  };
+
+  private getNp = async (login: string): Promise<number> => {
+    const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+    const np = parseInt(page('span#lottery_point').text(), 10);
+    if (Number.isNaN(np)) {
+      throw new Error(`Error while update np for ${login}.`);
+    }
+    return np;
+  };
+
+  private postTradeCard = async (login: string, price: number): Promise<void> => {
+    const page = await makePostMobileRequest(
+      `${NOBOT_MOBILE_URL.MANAGE_CARDS}`,
+      login,
+      'limit_rank=2&status=2&sell_card=1'
+    );
+    const sell = page('a[onclick^=sellCard]').first();
+    if (sell.length > 0) {
+      const onclickString = sell.attr('onclick');
+      const [, fileId, cardIndex] = onclickString?.match(/^sellCard\(([0-9]+).([0-9]+)/) as RegExpMatchArray;
+      await axios.post('http://action:3000/action/sell/stored', {
+        login,
+        fileId,
+        cardIndex,
+        price,
+        term: 1
+      });
+      this.logger.info('card posted for %d.', price);
+    } else {
+      throw new Error(`Impossible to find card to sell for ${login}.`);
+    }
   };
 }
