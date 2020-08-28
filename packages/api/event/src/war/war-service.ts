@@ -258,10 +258,18 @@ export default class WarService {
           // confirm start
           try {
             form = page('#sp_sc_5').parent();
+            let postData = form.serialize();
+            if (warConfig.fp) {
+              postData = postData.replace('fp=0', 'fp=1');
+            } else if (lastDay && warConfig.npc) {
+              postData += '&npc=1';
+            }
+            console.log(postData);
             await makePostMobileRequest(
               form.attr('action') as string,
               login,
-              `${form.serialize()}${lastDay && warConfig.npc ? '&npc=1' : ''}`,
+              postData,
+              // `${form.serialize()}${lastDay && warConfig.npc ? '&npc=1' : ''}`,
               false
             );
           } catch (err) {
@@ -275,7 +283,14 @@ export default class WarService {
               false
             );
           }
-          this.logger.info('Set up war for %s at line %d, npc: %s', login, warConfig.line, warConfig.npc && lastDay);
+          this.logger.info(
+            'Set up war for %s at line %d, npc: %s, pc: %s, fp: %s',
+            login,
+            warConfig.line,
+            warConfig.npc && lastDay,
+            warConfig.pc,
+            warConfig.fp
+          );
           this.waitForNext(login);
         } else {
           this.logger.info('Short in food (%d/%d) for %s. Recheck 1 hour later.', deckFood, currentFood, login);

@@ -23,6 +23,7 @@ export default class WarController {
   @RequestMapping('/warFields')
   async getWarFields(req: Request, res: Response): Promise<void> {
     try {
+      await this.warConfigService.checkWarByLogin('zzz_001');
       const warFields = await this.warConfigService.getWarFields();
       res.status(HttpStatus.OK).send(warFields);
     } catch (e) {
