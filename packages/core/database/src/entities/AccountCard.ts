@@ -50,9 +50,6 @@ export default class AccountCard {
   @Column('boolean', { name: 'deck_card', default: () => 'false' })
   deckCard: boolean;
 
-  @Column('boolean', { name: 'locked', default: () => 'false' })
-  locked: boolean;
-
   @Column('boolean', { name: 'protected', default: () => 'false' })
   protect: boolean;
 
@@ -62,8 +59,8 @@ export default class AccountCard {
   @Column('boolean', { name: 'tradable', default: () => 'true' })
   tradable: boolean;
 
-  @Column('boolean', { name: 'limit_break', default: () => 'false' })
-  limitBreak: boolean;
+  @Column('integer', { name: 'limit_break', default: () => '0' })
+  limitBreak: number;
 
   @ManyToOne(() => Account)
   @JoinColumn([{ name: 'login', referencedColumnName: 'login' }])

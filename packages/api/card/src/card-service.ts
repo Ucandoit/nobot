@@ -1,5 +1,22 @@
-import { makeRequest, NOBOT_URL, regexUtils, Service } from '@nobot-core/commons';
-import { Account, AccountCard, Card, CardRepository, SellStateRepository, StoreCard } from '@nobot-core/database';
+import {
+  executeConcurrent,
+  makeMobileRequest,
+  makePostMobileRequest,
+  makeRequest,
+  NOBOT_MOBILE_URL,
+  NOBOT_URL,
+  regexUtils,
+  Service
+} from '@nobot-core/commons';
+import {
+  Account,
+  AccountCard,
+  AccountRepository,
+  Card,
+  CardRepository,
+  SellStateRepository,
+  StoreCard
+} from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Connection, getCustomRepository, In, MoreThan, Not, Repository } from 'typeorm';
 import { getProperty, getRarity, getStar, imagesToNumber } from './card-utils';
@@ -10,7 +27,7 @@ export default class CardService {
 
   private cardRepository: CardRepository;
 
-  private accountRepository: Repository<Account>;
+  private accountRepository: AccountRepository;
 
   private accountCardRepository: Repository<AccountCard>;
 
@@ -18,7 +35,7 @@ export default class CardService {
 
   constructor(connection: Connection) {
     this.cardRepository = connection.getCustomRepository(CardRepository);
-    this.accountRepository = connection.getRepository<Account>('Account');
+    this.accountRepository = connection.getCustomRepository(AccountRepository);
     this.accountCardRepository = connection.getRepository<AccountCard>('AccountCard');
     this.storeCardRepository = connection.getRepository<StoreCard>('StoreCard');
   }
@@ -63,69 +80,12 @@ export default class CardService {
   };
 
   scanAllAccountCards = async (): Promise<void> => {
-    const accounts = await this.accountRepository.find({
-      where: {
-        expirationDate: MoreThan(new Date()),
-        mobile: false
-      },
-      order: {
-        login: 'ASC'
-      }
-    });
-    await accounts.reduce(async (previous: Promise<void>, account: Account): Promise<void> => {
-      await previous;
-      return this.scanAccountCards(account.login);
-    }, Promise.resolve());
-    // accounts
-    //   .reduce((acc: Account[][], account: Account, index: number) => {
-    //     if (index % 5 === 0) {
-    //       acc.push([]);
-    //     }
-    //     acc[acc.length - 1].push(account);
-    //     return acc;
-    //   }, [])
-    //   .reduce(async (previous: Promise<void[]>, group: Account[]): Promise<void[]> => {
-    //     await previous;
-    //     return Promise.all(group.map((account) => this.scanAccountCards(account.login)));
-    //   }, Promise.resolve([]));
-  };
-
-  scanAccountCards = async (login: string): Promise<void> => {
-    try {
-      let nextPage = 1;
-      const cardIds: number[] = [];
-      while (nextPage > 0) {
-        this.logger.info(`Scan page %d of %s's reserve cards.`, nextPage, login);
-        // eslint-disable-next-line no-await-in-loop
-        nextPage = await this.scanAccountPage(login, NOBOT_URL.MANAGE_RESERVE_CARDS, nextPage, cardIds);
-      }
-      this.logger.info(`Scan %s's deck cards.`, login);
-      await this.scanAccountPage(login, NOBOT_URL.MANAGE_DECK_CARDS, 1, cardIds);
-      // card does not exist anymore, need to update in sell state if it was selling before
-      const cardsToDelete = await this.accountCardRepository.find({
-        where: { account: { login }, id: Not(In(cardIds)) }
-      });
-      cardsToDelete.forEach(async (cardToDelete) => {
-        const sellStateRepository = getCustomRepository(SellStateRepository);
-        const sellState = await sellStateRepository.findOne(
-          { accountCard: { id: cardToDelete.id } },
-          { relations: ['accountCard', 'accountCard.card'] }
-        );
-        if (sellState) {
-          this.logger.info('Archive sell state for %d', sellState.accountCard?.id);
-          await sellStateRepository.update(sellState.id, {
-            status: 'SOLD',
-            sellDate: new Date(),
-            archivedData: sellState.accountCard,
-            accountCard: null
-          });
-        }
-        this.logger.info('Delete account card %d of %s', cardToDelete.id, login);
-        await this.accountCardRepository.delete(cardToDelete.id);
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    const accounts = await this.accountRepository.getMobileAccounts();
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      this.scanAccountCards,
+      1
+    );
   };
 
   private scanStoredPage = async (login: string, url: string, pages: number): Promise<number> => {
@@ -159,69 +119,6 @@ export default class CardService {
       }
     });
     return nextPage;
-  };
-
-  private scanAccountPage = async (login: string, url: string, pages: number, cardIds: number[]): Promise<number> => {
-    const page = (await makeRequest(`${url}&pages=${pages}`, 'GET', login)) as CheerioStatic;
-    const cardElements = page('.card');
-    if (cardElements.length > 0) {
-      const promises: Promise<void>[] = [];
-      cardElements.each(async (index) => {
-        const cardElement = cardElements.eq(index);
-        promises.push(this.scanAccountCard(cardElement, login, url, cardIds));
-      });
-      await Promise.all(promises);
-    }
-    // check if there is a next page
-    let nextPage = -1;
-    const currentPages = page('.current-page');
-    currentPages.each((index) => {
-      const nextElement = currentPages.eq(index).next();
-      if (nextElement && nextElement.hasClass('other-page')) {
-        nextPage = pages + 1;
-      }
-    });
-    return nextPage;
-  };
-
-  private scanAccountCard = async (
-    cardElement: Cheerio,
-    login: string,
-    url: string,
-    cardIds: number[]
-  ): Promise<void> => {
-    const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=card card-id)[0-9]+/, 'integer') as
-      | number
-      | null;
-    if (id) {
-      cardIds.push(id);
-      const accountCard = await this.accountCardRepository.findOne(id, { select: ['id', 'card'], relations: ['card'] });
-      if (accountCard) {
-        // update
-        this.logger.info('Update account card %s for %s.', accountCard.card.name, login);
-        this.accountCardRepository.update({ id: accountCard.id }, this.htmlToAccountCard(cardElement));
-      } else {
-        // create
-        const tradable =
-          cardElement.find('.card-trade').length === 0 ||
-          !cardElement.find('.card-trade').attr('src')?.includes('mark_unrecommend_01');
-        const number = parseInt(cardElement.parent().prev().find('span').last().text().replace('No.', ''), 10);
-        const card = await this.cardRepository.findOne({ number, tradable });
-        if (card) {
-          const newCard = {
-            ...this.htmlToAccountCard(cardElement),
-            id,
-            deckCard: url === NOBOT_URL.MANAGE_DECK_CARDS,
-            account: { login },
-            card: { id: card?.id }
-          };
-          this.logger.info('Create account card for %s.', login);
-          await this.accountCardRepository.save(newCard);
-        } else {
-          this.logger.error('Card %d not found.', number);
-        }
-      }
-    }
   };
 
   getCardDetail = async (cardId: string, login: string): Promise<any> => {
@@ -320,11 +217,12 @@ export default class CardService {
           .map((i, img) => img.attribs.src)
           .toArray() as unknown) as string[]
       ),
-      locked: false,
-      protect: cardElement.parent().prev().find('img[class^=mark]').css('display') !== 'none',
-      helper: cardElement.parent().prev().find('img[class^=helper]').css('display') !== 'none',
       tradable: cardElement.find('.card-trade').length === 0,
-      limitBreak: cardElement.find('.card-limit-break-level').length > 0
+      limitBreak:
+        regexUtils.catchByRegexAsNumber(
+          cardElement.find('.card-limit-break-level').text() as string,
+          /(?<=Lv)[0-9]+$/
+        ) || 0
     };
   };
 
@@ -368,5 +266,114 @@ export default class CardService {
     const buyForm = page('#form');
     const requestParams = buyForm.serialize().replace(/(?<=&trade-id=)[0-9]+(?=&)/, tradeId);
     await makeRequest(NOBOT_URL.TRADE_BUY, 'POST', login, requestParams);
+  };
+
+  scanAccountCards = async (login: string): Promise<void> => {
+    try {
+      this.logger.info(`Scan %s's deck cards.`, login);
+      const cardIds: number[] = [];
+      await this.scanAccountPage(login, NOBOT_MOBILE_URL.MANAGE_DECK_CARDS, 1, cardIds);
+      const page = await makeMobileRequest(NOBOT_MOBILE_URL.MANAGE_RESERVE_CARDS, login);
+      const inputButtons = page('input[type=button]');
+      let pages = 1;
+      inputButtons.each((i) => {
+        const value = parseInt(inputButtons.eq(i).val(), 10);
+        if (!Number.isNaN(value) && value > pages) {
+          pages = value;
+        }
+      });
+      for (let i = 1; i <= pages; i++) {
+        this.logger.info(`Scan page %d of %s's reserve cards.`, i, login);
+        // eslint-disable-next-line no-await-in-loop
+        await this.scanAccountPage(login, NOBOT_MOBILE_URL.MANAGE_RESERVE_CARDS, i, cardIds);
+      }
+      // card does not exist anymore, need to update in sell state if it was selling before
+      const cardsToDelete = await this.accountCardRepository.find({
+        where: { account: { login }, id: Not(In(cardIds)) }
+      });
+      cardsToDelete.forEach(async (cardToDelete) => {
+        const sellStateRepository = getCustomRepository(SellStateRepository);
+        const sellState = await sellStateRepository.findOne(
+          { accountCard: { id: cardToDelete.id } },
+          { relations: ['accountCard', 'accountCard.card'] }
+        );
+        if (sellState) {
+          this.logger.info('Archive sell state for %d', sellState.accountCard?.id);
+          await sellStateRepository.update(sellState.id, {
+            status: 'SOLD',
+            sellDate: new Date(),
+            archivedData: sellState.accountCard,
+            accountCard: null
+          });
+        }
+        this.logger.info('Delete account card %d of %s', cardToDelete.id, login);
+        await this.accountCardRepository.delete(cardToDelete.id);
+      });
+    } catch (err) {
+      this.logger.error(err);
+    }
+  };
+
+  private scanAccountPage = async (login: string, url: string, pages: number, cardIds: number[]): Promise<void> => {
+    const page = await makeMobileRequest(encodeURIComponent(`${url}&list_page=${pages}`), login);
+    const cardFaces = page('img[class*=face-card-id]');
+    if (cardFaces.length > 0) {
+      const promises: Promise<void>[] = [];
+      cardFaces.each(async (index) => {
+        const cardFace = cardFaces.eq(index);
+        promises.push(this.scanAccountCard(cardFace, login, url, cardIds));
+      });
+      await Promise.all(promises);
+    } else {
+      this.logger.info('Unable to find card faces for %s.', login);
+    }
+  };
+
+  /**
+   * Scan account card (mobile version).
+   * @param cardFace dom element of card face
+   * @param login account login
+   * @param url deck card or reserved card url
+   * @param cardIds scanned card ids (used to check if any card in database is deleted)
+   */
+  private scanAccountCard = async (cardFace: Cheerio, login: string, url: string, cardIds: number[]): Promise<void> => {
+    const cardId = regexUtils.catchByRegexAsNumber(cardFace.attr('class'), /(?<=face-card-id)[0-9]+/);
+    if (cardId) {
+      const cardBlock = cardFace.parents('table').last().parent();
+      const cardPage = await makePostMobileRequest(NOBOT_MOBILE_URL.CARD_DETAIL, login, `cardid=${cardId}`);
+      const newCard = {
+        ...this.htmlToAccountCard(cardPage('.card')),
+        deckCard: url === NOBOT_MOBILE_URL.MANAGE_DECK_CARDS,
+        protect: cardBlock.find('img[src*="key_mark"]').length > 0,
+        helper: cardBlock.find('img[src*="key_helper"]').length > 0,
+        account: { login }
+      };
+      const accountCard = await this.accountCardRepository.findOne(cardId, {
+        select: ['id', 'card'],
+        relations: ['card']
+      });
+      if (accountCard) {
+        // update
+        this.logger.info('Update account card %s for %s.', accountCard.card.name, login);
+        this.accountCardRepository.update(cardId, newCard);
+      } else {
+        // create
+        const number = parseInt(cardBlock.find('font').first().text().replace('No.', ''), 10);
+        const card = await this.cardRepository.findOne({ number, tradable: newCard.tradable });
+        if (card) {
+          this.logger.info('Create account card %s for %s.', card.name, login);
+          await this.accountCardRepository.save({
+            ...newCard,
+            id: cardId,
+            card: { id: card.id }
+          });
+        } else {
+          this.logger.error('Card %d not found.', number);
+        }
+      }
+      cardIds.push(cardId);
+    } else {
+      this.logger.error('Unable to get card id for %s', login);
+    }
   };
 }
