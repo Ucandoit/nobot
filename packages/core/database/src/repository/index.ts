@@ -1,3 +1,4 @@
+export { default as AccountCardRepository } from './account-card-repository';
 export { default as AccountConfigRepository } from './account-config-repository';
 export { default as AccountRepository } from './account-repository';
 export { default as AuctionConfigRepository } from './auction-config-repository';

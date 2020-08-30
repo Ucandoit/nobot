@@ -29,12 +29,6 @@ export default class CardController {
     res.status(200).send(card);
   }
 
-  @RequestMapping('/scan/account')
-  scanAllAccountCards(req: Request, res: Response): void {
-    this.cardService.scanAllAccountCards();
-    res.status(200).send();
-  }
-
   @RequestMapping('/trade/np')
   async tradeNp(req: Request, res: Response): Promise<void> {
     const { source, target } = req.query;
