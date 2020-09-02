@@ -1,5 +1,6 @@
 import { getFinalPage, NOBOT_MOBILE_URL, regexUtils, Service } from '@nobot-core/commons';
-import { DeckConfigRepository } from '@nobot-core/database';
+import { AccountCard, DeckConfigRepository } from '@nobot-core/database';
+import axios from 'axios';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
 import buildConfig from '../building/build-config';
@@ -10,14 +11,20 @@ interface CardFace {
   faceUrl: string;
   action: boolean;
   trading: boolean;
+  inDeck: boolean;
+}
+
+interface CardDetail extends CardFace {
   favorite: boolean;
+  accountCard?: AccountCard;
 }
 
 interface VillageInfo {
   resourceInfo: ResourceInfo;
   areas: MapArea[];
-  deckCards: CardFace[];
-  reserveCards: CardFace[];
+  // deckCards: CardFace[];
+  // reserveCards: CardFace[];
+  cards: CardFace[];
 }
 
 @Service()
@@ -33,11 +40,13 @@ export default class VillageService {
   getVillage = async (login: string): Promise<VillageInfo> => {
     this.logger.info('get village info of %s', login);
     const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+
     return {
       resourceInfo: this.getResourceInfo(page),
       areas: this.getMapInfo(page),
-      deckCards: await this.getCards(page, true, login),
-      reserveCards: await this.getCards(page, false, login)
+      // deckCards: await this.getCards(page, true, login, accountCards),
+      // reserveCards: await this.getCards(page, false, login, accountCards),
+      cards: await this.getCards(page, login)
     };
   };
 
@@ -81,34 +90,64 @@ export default class VillageService {
     };
   };
 
-  getCards = async (page: CheerioStatic, inDeck: boolean, login: string): Promise<CardFace[]> => {
-    const cards: CardFace[] = [];
+  getCards = async (page: CheerioStatic, login: string): Promise<CardDetail[]> => {
+    const cards: CardDetail[] = [];
+    // get account cards
+    const res = await axios.get(`http://card:3000/cards/account?login=${login}`);
+    const accountCards = res.data as AccountCard[];
+    // get favorite cards
     const deckConfig = await this.deckConfigRepository.findOne(login);
     const favoriteCardIds = deckConfig?.favoriteCardIds?.split(',') ?? [];
-    const cardElements = page(inDeck ? '#pool_1 .reserve-face' : '#pool_2 .reserve-face, #pool_3 .reserve-face');
-    for (let i = 0; i < cardElements.length; i++) {
-      const cardElement = cardElements.eq(i);
-      const id = regexUtils.catchByRegex(cardElement.attr('class'), /(?<=face-card-id)[0-9]+/) as number;
-      const faceUrl = cardElement.children().first().attr('src') as string;
+
+    const deckCards = page('#pool_1 .reserve-face');
+    deckCards.each((i) => {
+      const card = deckCards.eq(i);
+      const cardFace = this.mapToCardFace(card, true);
+      cards.push({
+        ...cardFace,
+        favorite: favoriteCardIds.includes(cardFace.id.toString()),
+        accountCard: accountCards.find((c) => c.id === cardFace.id)
+      });
+    });
+
+    const reserveCards = page('#pool_2 .reserve-face, #pool_3 .reserve-face');
+    reserveCards.each((i) => {
+      const card = reserveCards.eq(i);
+      const cardFace = this.mapToCardFace(card, true);
+      cards.push({
+        ...cardFace,
+        favorite: favoriteCardIds.includes(cardFace.id.toString()),
+        accountCard: accountCards.find((c) => c.id === cardFace.id)
+      });
+    });
+
+    // TODO: add account card that does not exist any more
+    return cards;
+  };
+
+  private mapToCardFace = (card: Cheerio, inDeck: boolean): CardFace => {
+    const id = regexUtils.catchByRegexAsNumber(card.attr('class'), /(?<=face-card-id)[0-9]+/);
+    if (id) {
+      const faceUrl = card.children().first().attr('src') as string;
       let action = false;
       let trading = false;
-      if (cardElement.attr('class')?.includes('action')) {
-        const actionImgUrl = cardElement.children().eq(1).attr('src');
+      if (card.attr('class')?.includes('action')) {
+        const actionImgUrl = card.children().eq(1).attr('src');
         if (actionImgUrl?.includes('action_01')) {
           action = true;
         } else if (actionImgUrl?.includes('action_02')) {
           trading = true;
         }
       }
-      cards.push({
+      return {
         id,
         faceUrl,
         action,
         trading,
-        favorite: favoriteCardIds.includes(id.toString())
-      });
+        inDeck
+      };
     }
-    return cards;
+    throw new Error('Unable to get card id.');
   };
 
   costEnough = (resourceCost: ResourceCost, resourceInfo: ResourceInfo): boolean => {
