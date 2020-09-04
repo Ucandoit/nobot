@@ -5,6 +5,7 @@ export { default as AuctionHistory } from './auction-history';
 export { default as AuctionConfig } from './AuctionConfig';
 export { default as Card } from './Card';
 export { default as DeckConfig } from './deck-config';
+export { default as DrawHistory } from './draw-history';
 export { default as Parameter } from './Parameter';
 export { default as SellState } from './SellState';
 export { default as Skill } from './skill';

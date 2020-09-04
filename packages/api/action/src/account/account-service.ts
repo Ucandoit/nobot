@@ -26,8 +26,11 @@ export default class AccountService {
 
   private accountRepository: AccountRepository;
 
+  // private drawHistoryRepository: DrawHistoryRepository;
+
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
+    // this.drawHistoryRepository = connection.getCustomRepository(DrawHistoryRepository);
   }
 
   dailyLoginAll = async (): Promise<void> => {
@@ -104,7 +107,7 @@ export default class AccountService {
   checkAllAuctionRequirement = async (): Promise<void> => {
     const accounts = await this.accountRepository.getMobileAccounts();
     executeConcurrent(
-      accounts.map((account) => account.login).filter((login) => login.startsWith('zz0')),
+      accounts.map((account) => account.login),
       this.checkAuctionRequirement,
       10
     );
@@ -119,6 +122,7 @@ export default class AccountService {
       draw: 0,
       upgrade: 0
     };
+    const lacks: string[] = [];
     const page = await makeMobileRequest(NOBOT_MOBILE_URL.PROFILE, login);
     const rows = page('#main > div').eq(4).find('table tr');
     rows.each((i) => {
@@ -126,18 +130,84 @@ export default class AccountService {
       const level = regexUtils.catchByRegexAsNumber(text, /(?<=Lv)[0-9]+/) || 0;
       if (text.includes('戦績')) {
         accountLevel.record = level;
+        if (level < 3) {
+          lacks.push('戦績');
+        }
       } else if (text.includes('対戦')) {
         accountLevel.wrestle = level;
+        if (level < 3) {
+          lacks.push('対戦');
+        }
       } else if (text.includes('合戦')) {
         accountLevel.war = level;
+        if (level < 3) {
+          lacks.push('合戦');
+        }
       } else if (text.includes('討伐')) {
         accountLevel.battle = level;
+        if (level < 3) {
+          lacks.push('討伐');
+        }
       } else if (text.includes('くじ')) {
         accountLevel.draw = level;
+        if (level < 3) {
+          lacks.push('くじ');
+        }
       } else if (text.includes('強化')) {
         accountLevel.upgrade = level;
+        if (level < 3) {
+          lacks.push('強化');
+        }
       }
     });
-    this.logger.info('Account level for %s: %s', login, accountLevel);
+    if (lacks.length > 0) {
+      this.logger.warn('Lack %s for %s.', lacks, login);
+    }
+    this.logger.info('Account level for %s: %s.', login, accountLevel);
+  };
+
+  countJi = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        const page = await makeMobileRequest(NOBOT_MOBILE_URL.DRAW, login);
+        const jiButton = page('img[src*="btn_nyaomikuji_04.gif"]');
+        if (jiButton.length > 0) {
+          const nb = +jiButton.parentsUntil('center').prev().prev().text();
+          this.logger.info('%d ji for %s', nb, login);
+        }
+      },
+      10
+    );
+  };
+
+  drawJi = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        for (let i = 0; i < 20; i++) {
+          // eslint-disable-next-line no-await-in-loop
+          const page = await makePostMobileRequest(NOBOT_MOBILE_URL.DRAW_PROC, login, 'type=4');
+          const redirectUrl = regexUtils.catchByRegex(page.html(), /(?<=nextURL = ").+(?=")/) as string;
+          if (redirectUrl) {
+            // eslint-disable-next-line no-await-in-loop
+            const resultPage = await makeMobileRequest(redirectUrl, login, false);
+            this.logger.info('card %s drawn for %s.', resultPage('.card-name').text(), login);
+            // TODO: add to draw history
+            // const card = resultPage('.card');
+            // await this.drawHistoryRepository.save({
+            //   cardName: card.find('.card-name').text(),
+            //   cardRarity: '',
+            //   cardStar: 0,
+            //   drawTime: new Date(),
+            //   account: { login }
+            // });
+          }
+        }
+      },
+      10
+    );
   };
 }
