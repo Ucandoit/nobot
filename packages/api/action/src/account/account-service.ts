@@ -4,11 +4,21 @@ import {
   makeMobileRequest,
   makePostMobileRequest,
   NOBOT_MOBILE_URL,
+  regexUtils,
   Service
 } from '@nobot-core/commons';
 import { AccountRepository } from '@nobot-core/database';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm/connection/Connection';
+
+interface AccountLevel {
+  record: number;
+  wrestle: number;
+  war: number;
+  battle: number;
+  draw: number;
+  upgrade: number;
+}
 
 @Service()
 export default class AccountService {
@@ -89,5 +99,45 @@ export default class AccountService {
     } else {
       this.logger.warn('Account %s not found or does not have recruit id.', recruiter);
     }
+  };
+
+  checkAllAuctionRequirement = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    executeConcurrent(
+      accounts.map((account) => account.login).filter((login) => login.startsWith('zz0')),
+      this.checkAuctionRequirement,
+      10
+    );
+  };
+
+  checkAuctionRequirement = async (login: string): Promise<void> => {
+    const accountLevel: AccountLevel = {
+      record: 0,
+      wrestle: 0,
+      war: 0,
+      battle: 0,
+      draw: 0,
+      upgrade: 0
+    };
+    const page = await makeMobileRequest(NOBOT_MOBILE_URL.PROFILE, login);
+    const rows = page('#main > div').eq(4).find('table tr');
+    rows.each((i) => {
+      const text = rows.eq(i).text();
+      const level = regexUtils.catchByRegexAsNumber(text, /(?<=Lv)[0-9]+/) || 0;
+      if (text.includes('戦績')) {
+        accountLevel.record = level;
+      } else if (text.includes('対戦')) {
+        accountLevel.wrestle = level;
+      } else if (text.includes('合戦')) {
+        accountLevel.war = level;
+      } else if (text.includes('討伐')) {
+        accountLevel.battle = level;
+      } else if (text.includes('くじ')) {
+        accountLevel.draw = level;
+      } else if (text.includes('強化')) {
+        accountLevel.upgrade = level;
+      }
+    });
+    this.logger.info('Account level for %s: %s', login, accountLevel);
   };
 }
