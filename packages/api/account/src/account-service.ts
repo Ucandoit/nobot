@@ -59,7 +59,8 @@ export default class AccountService {
     this.logger.info('trade np from %s to %s.', buyer, seller);
     try {
       const np = await this.getNp(buyer);
-      await this.postTradeCard(seller, np);
+      const tradeId = await this.postTradeCard(seller, np);
+      await this.buyCard(buyer, tradeId);
     } catch (err) {
       this.logger.error(err);
     }
@@ -74,7 +75,7 @@ export default class AccountService {
     return np;
   };
 
-  private postTradeCard = async (login: string, price: number): Promise<void> => {
+  private postTradeCard = async (login: string, price: number): Promise<string> => {
     const page = await makePostMobileRequest(
       `${NOBOT_MOBILE_URL.MANAGE_CARDS}`,
       login,
@@ -84,16 +85,21 @@ export default class AccountService {
     if (sell.length > 0) {
       const onclickString = sell.attr('onclick');
       const [, fileId, cardIndex] = onclickString?.match(/^sellCard\(([0-9]+).([0-9]+)/) as RegExpMatchArray;
-      await axios.post('http://action:3000/action/sell/stored', {
+      const res = await axios.post('http://action:3000/action/sell/stored', {
         login,
         fileId,
         cardIndex,
         price,
         term: 1
       });
-      this.logger.info('card posted for %d.', price);
-    } else {
-      throw new Error(`Impossible to find card to sell for ${login}.`);
+      this.logger.info('card posted for %d by %s.', price, login);
+      return res.data;
     }
+    throw new Error(`Impossible to find card to sell for ${login}.`);
+  };
+
+  private buyCard = async (login: string, tradeId: string): Promise<void> => {
+    await makePostMobileRequest(NOBOT_MOBILE_URL.TRADE_BUY, login, `trade_id=${tradeId}&select=yes&catev=0`);
+    this.logger.info('Card bought by %s.', login);
   };
 }

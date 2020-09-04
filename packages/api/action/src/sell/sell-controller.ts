@@ -29,8 +29,7 @@ export default class SellController {
       res.status(HttpStatus.BAD_REQUEST).send({ error: error.message });
     } else {
       try {
-        await this.sellService.sellStoredCard(login, fileId, cardIndex, price, term);
-        res.status(200).send();
+        res.status(200).send(await this.sellService.sellStoredCard(login, fileId, cardIndex, price, term));
       } catch (err) {
         res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(err);
       }
