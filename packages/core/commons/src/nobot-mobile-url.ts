@@ -38,6 +38,8 @@ export default {
   TERRITORY_INFO: 'http://210.140.157.168/mobile/unity/mobile_unity_territory_info.htm',
   ITEMBOX: 'http://210.140.157.168/mobile/user/mobile_itembox.htm',
   TRADE_SELL: 'http://210.140.157.168/mobile/card/mobile_trade_sell.htm',
+  DRAW: 'http://210.140.157.168/mobile/nyaomikuji/mobile_nyaomikuji.htm',
+  DRAW_PROC: 'http://210.140.157.168/mobile/nyaomikuji/mobile_nyaomikuji_proc.htm',
   CHARGE_FOOD: 'http://210.140.157.168/command/charge_food_ticket.json',
   CATTALE_FEVER: 'http://210.140.157.168/command/cattale_fever.json',
   CATTALE_CHAPTER_REWARD: 'http://210.140.157.168/cattale/chapter_reward_list.htm',
