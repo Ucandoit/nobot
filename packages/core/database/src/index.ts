@@ -11,6 +11,7 @@ import {
   SellState,
   Skill,
   StoreCard,
+  Task,
   WarConfig
 } from './entities';
 
@@ -43,7 +44,8 @@ const initConnection = async (options: PostgresConnectionOptions): Promise<Conne
       AccountConfig,
       WarConfig,
       Skill,
-      DeckConfig
+      DeckConfig,
+      Task
     ],
     logging: false,
     ...options
@@ -52,4 +54,5 @@ const initConnection = async (options: PostgresConnectionOptions): Promise<Conne
 
 export * from './entities';
 export * from './repository';
+export * from './types';
 export default initConnection;

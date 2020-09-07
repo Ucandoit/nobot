@@ -8,4 +8,5 @@ export { default as DeckConfigRepository } from './deck-config-repository';
 export { default as ParameterRepository } from './parameter-repository';
 export { default as SellStateRepository } from './SellStateRepository';
 export { default as SkillRepository } from './skill-repository';
+export { default as TaskRepository } from './task-repository';
 export { default as WarConfigRepository } from './war-config-repository';

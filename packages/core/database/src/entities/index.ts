@@ -9,4 +9,5 @@ export { default as Parameter } from './Parameter';
 export { default as SellState } from './SellState';
 export { default as Skill } from './skill';
 export { default as StoreCard } from './StoreCard';
+export { default as Task } from './task';
 export { default as WarConfig } from './war-config';
