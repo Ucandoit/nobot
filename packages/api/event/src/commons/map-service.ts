@@ -13,11 +13,11 @@ import { getLogger } from 'log4js';
 export default class MapService {
   private logger = getLogger(MapService.name);
 
-  checkInAction = async (login: string): Promise<boolean> => {
+  checkInAction = async (login: string, page?: CheerioStatic): Promise<boolean> => {
     this.logger.info('Checking is in action for %s.', login);
-    const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+    const villagePage = page || (await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login));
     let action = false;
-    const deckCards = page('#pool_1 div[class^=face-card-id]');
+    const deckCards = villagePage('#pool_1 div[class^=face-card-id]');
     if (deckCards.length > 0) {
       deckCards.each((i, card) => {
         if (card.attribs.class.includes('action')) {
@@ -56,14 +56,16 @@ export default class MapService {
     }
   };
 
-  convertFood = async (login: string, page: CheerioStatic): Promise<number> => {
-    const fire = parseInt(page('#element_fire').text(), 10);
-    const earth = parseInt(page('#element_earth').text(), 10);
-    const wind = parseInt(page('#element_wind').text(), 10);
-    const water = parseInt(page('#element_water').text(), 10);
-    const sky = parseInt(page('#element_sky').text(), 10);
-    let food = parseInt(page('#element_food').text(), 10);
+  convertFood = async (login: string, page?: CheerioStatic): Promise<number> => {
+    const villagePage = page || (await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login));
+    const fire = parseInt(villagePage('#element_fire').text(), 10);
+    const earth = parseInt(villagePage('#element_earth').text(), 10);
+    const wind = parseInt(villagePage('#element_wind').text(), 10);
+    const water = parseInt(villagePage('#element_water').text(), 10);
+    const sky = parseInt(villagePage('#element_sky').text(), 10);
+    let food = parseInt(villagePage('#element_food').text(), 10);
     if (Number.isNaN(food)) {
+      this.logger.info(he.decode(villagePage.html()));
       throw new Error(`Food is NaN for ${login}`);
     }
     if (fire >= 3000 || earth >= 3000 || wind >= 3000 || water >= 3000 || sky >= 3000) {
@@ -75,7 +77,7 @@ export default class MapService {
         Math.floor(sky / 20);
       if (convertedFood > 0 && convertedFood + food <= 7500) {
         this.logger.info('Convert food: %d', convertedFood);
-        const buildIdx = this.getMarketBuildIdx(page);
+        const buildIdx = this.getMarketBuildIdx(villagePage);
         if (buildIdx > 0) {
           await makePostMobileRequest(NOBOT_MOBILE_URL.TRADE, login, `useall=1&buildIdx=${buildIdx}`);
           food += convertedFood;

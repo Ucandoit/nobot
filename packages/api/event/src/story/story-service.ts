@@ -1,9 +1,18 @@
-import { executeConcurrent, Service } from '@nobot-core/commons';
+import {
+  executeConcurrent,
+  getFinalPage,
+  makeMobileRequest,
+  makePostMobileRequest,
+  nobotUtils,
+  NOBOT_MOBILE_URL,
+  regexUtils,
+  Service
+} from '@nobot-core/commons';
 import { AccountRepository, TaskRepository, TaskStatus, TaskType } from '@nobot-core/database';
-// import { inject } from 'inversify';
+import { inject } from 'inversify';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
-// import MapService from '../commons/map-service';
+import MapService from '../commons/map-service';
 
 interface StoryTaskProperties {
   test: string;
@@ -13,8 +22,8 @@ interface StoryTaskProperties {
 export default class StoryService {
   private logger = getLogger(StoryService.name);
 
-  // @inject(MapService)
-  // private mapService: MapService;
+  @inject(MapService)
+  private mapService: MapService;
 
   private accountRepository: AccountRepository;
 
@@ -91,12 +100,99 @@ export default class StoryService {
     }
   };
 
-  executeTask = async (login: string): Promise<void> => {
+  pause = async (login: string): Promise<void> => {
     try {
       const task = await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY);
-      this.logger.info(task?.properties);
+      if (task) {
+        this.logger.info('Pause story task for %s.', login);
+        await this.taskRepository.update(task.id, {
+          status: TaskStatus.PAUSE
+        });
+      } else {
+        this.logger.warn('No running story task for %s.', login);
+      }
     } catch (err) {
       this.logger.error(err);
+    }
+  };
+
+  executeTask = async (login: string): Promise<void> => {
+    const task = await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY);
+    try {
+      if (task && task.status === TaskStatus.RUNNING) {
+        // first request returns map page
+        await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        const inAction = await this.mapService.checkInAction(login, page);
+        if (inAction) {
+          this.logger.info('Still in action for %s.', login);
+          setTimeout(() => {
+            this.executeTask(login);
+          }, 5000);
+          return;
+        }
+        const currentFood = await this.mapService.convertFood(login, page);
+        // TODO: calculate deck food based on deck cards
+        const deckFood = 620;
+        if (currentFood < deckFood) {
+          this.logger.info('Not enough food for %s (current: %d).', login, currentFood);
+          // TODO: implement add extract food ticket based on option
+          this.logger.info('Pause task for %s', login);
+          await this.taskRepository.update(task.id, {
+            status: TaskStatus.PAUSE
+          });
+          return;
+        }
+        const mapPage = await getFinalPage(NOBOT_MOBILE_URL.AREA_MAP, login);
+        const enemies = mapPage('.enemy_data_info');
+        if (enemies.length > 0) {
+          const enemy = enemies.first();
+          const secondsText = regexUtils.catchByRegex(
+            enemy.find('.enemy_detail').html() as string,
+            /[0-9]{2}:[0-9]{2}:[0-9]{2}/
+          ) as string | null;
+          if (secondsText) {
+            const seconds = nobotUtils.getSeconds(secondsText);
+            const nextUrl = enemy.find('.enemy_button a').attr('href');
+            if (nextUrl) {
+              const confirmPage = await makeMobileRequest(nextUrl, login, false);
+              const form = confirmPage('#sp_sc_5').parent();
+              if (form.length > 0) {
+                await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+                this.logger.info('Start story battle for %s with duration %d', login, seconds);
+                setInterval(() => {
+                  this.executeTask(login);
+                }, seconds * 1000);
+                return;
+              }
+              this.logger.error('No form found for %s.', login);
+              await this.taskRepository.update(task.id, {
+                status: TaskStatus.PAUSE
+              });
+              return;
+            }
+            this.logger.error('No nextUrl found for %s, retry once.', login);
+          } else {
+            this.logger.error('No seconds found for %s, retry once.', login);
+          }
+        } else {
+          this.logger.error('No enemy found for %s, retry once.', login);
+        }
+        setTimeout(() => {
+          this.executeTask(login);
+        }, 5000);
+      } else {
+        this.logger.warn('Task is not running any more for %s.', login);
+        // TODO: stop
+      }
+    } catch (err) {
+      this.logger.error(err);
+      // pause task when error
+      if (task) {
+        await this.taskRepository.update(task.id, {
+          status: TaskStatus.PAUSE
+        });
+      }
     }
   };
 }

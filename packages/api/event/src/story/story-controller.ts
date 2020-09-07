@@ -40,4 +40,15 @@ export default class StoryController {
       res.status(HttpStatus.BAD_REQUEST).send('login is required.');
     }
   }
+
+  @RequestMapping('/pause')
+  async pause(req: Request, res: Response): Promise<void> {
+    const login = getQueryParamAsString(req, 'login');
+    if (login) {
+      this.storyService.pause(login);
+      res.status(HttpStatus.OK).send();
+    } else {
+      res.status(HttpStatus.BAD_REQUEST).send('login is required.');
+    }
+  }
 }
