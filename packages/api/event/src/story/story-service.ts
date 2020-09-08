@@ -37,7 +37,7 @@ export default class StoryService {
   startAll = async (): Promise<void> => {
     const accounts = await this.accountRepository.getMobileAccounts();
     executeConcurrent(
-      accounts.map((account) => account.login).filter((login) => login.startsWith('zzz_00')),
+      accounts.map((account) => account.login),
       this.start,
       10
     );
@@ -120,9 +120,14 @@ export default class StoryService {
     const task = await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY);
     try {
       if (task && task.status === TaskStatus.RUNNING) {
+        // TODO: review this while loop
         // first request returns map page
-        await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
-        const page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        // loop until get to final village page
+        while (page('#mainmap').length > 0 || page('#village_top_main').length === 0) {
+          // eslint-disable-next-line no-await-in-loop
+          page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        }
         const inAction = await this.mapService.checkInAction(login, page);
         if (inAction) {
           this.logger.info('Still in action for %s.', login);
@@ -160,7 +165,7 @@ export default class StoryService {
               if (form.length > 0) {
                 await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
                 this.logger.info('Start story battle for %s with duration %d', login, seconds);
-                setInterval(() => {
+                setTimeout(() => {
                   this.executeTask(login);
                 }, seconds * 1000);
                 return;
