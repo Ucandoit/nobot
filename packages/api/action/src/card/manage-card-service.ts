@@ -182,7 +182,6 @@ export default class ManageCardService {
       const numberText = face.parents('table').last().prev().children().first().text();
       if (number === parseInt(numberText.replace('No.', ''), 10)) {
         card.id = regexUtils.catchByRegex(face.attr('class'), /(?<=face-card-id)[0-9]+/, 'integer') as number;
-        card.inDeck = true;
         break;
       }
     }
