@@ -51,4 +51,20 @@ export default class StoryController {
       res.status(HttpStatus.BAD_REQUEST).send('login is required.');
     }
   }
+
+  @RequestMapping('/status')
+  async status(req: Request, res: Response): Promise<void> {
+    try {
+      const login = getQueryParamAsString(req, 'login');
+      if (login) {
+        const status = await this.storyService.getStatus(login);
+        res.status(HttpStatus.OK).send(status);
+      } else {
+        const allStatus = await this.storyService.getAllStatus();
+        res.status(HttpStatus.OK).send(allStatus);
+      }
+    } catch (err) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
+    }
+  }
 }

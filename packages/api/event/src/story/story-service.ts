@@ -9,6 +9,7 @@ import {
   Service
 } from '@nobot-core/commons';
 import { AccountRepository, Task, TaskRepository, TaskStatus, TaskType } from '@nobot-core/database';
+import he from 'he';
 import { inject } from 'inversify';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
@@ -16,6 +17,13 @@ import MapService from '../commons/map-service';
 
 interface StoryTaskProperties {
   test: string;
+}
+
+interface StoryStatus {
+  login: string;
+  chapter: number;
+  section: number;
+  rank: number;
 }
 
 @Service()
@@ -130,7 +138,38 @@ export default class StoryService {
     }
   };
 
-  executeTask = async (login: string): Promise<void> => {
+  getAllStatus = async (): Promise<StoryStatus[]> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    const allStatus: StoryStatus[] = [];
+    await executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        allStatus.push(await this.getStatus(login));
+      },
+      20
+    );
+    return allStatus;
+  };
+
+  getStatus = async (login: string): Promise<StoryStatus> => {
+    const page = await makeMobileRequest(NOBOT_MOBILE_URL.CATTALE_PROGRESS, login);
+    const main = page('#cattale-progress-main');
+    const chapterSectionString = he.decode(main.html() as string).match(/第([0-9]+)章 第([0-9])幕/);
+    const rankString = he.decode(main.html() as string).match(/(([0-9]|,)+)位/);
+    if (chapterSectionString && rankString) {
+      const [, chapter, section] = chapterSectionString as RegExpMatchArray;
+      const [, rank] = rankString as RegExpMatchArray;
+      return {
+        login,
+        chapter: +chapter,
+        section: +section,
+        rank: +rank.replace(',', '')
+      };
+    }
+    throw new Error(`Unable to get status for ${login}`);
+  };
+
+  private executeTask = async (login: string): Promise<void> => {
     const task = await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY);
     try {
       if (task && task.status === TaskStatus.RUNNING) {
