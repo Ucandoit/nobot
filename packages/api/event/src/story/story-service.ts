@@ -8,7 +8,7 @@ import {
   regexUtils,
   Service
 } from '@nobot-core/commons';
-import { AccountRepository, TaskRepository, TaskStatus, TaskType } from '@nobot-core/database';
+import { AccountRepository, Task, TaskRepository, TaskStatus, TaskType } from '@nobot-core/database';
 import { inject } from 'inversify';
 import { getLogger } from 'log4js';
 import { Connection } from 'typeorm';
@@ -28,6 +28,10 @@ export default class StoryService {
   private accountRepository: AccountRepository;
 
   private taskRepository: TaskRepository<StoryTaskProperties>;
+
+  private pauseTaskIntervalIdMap = new Map<string, NodeJS.Timeout>();
+
+  private executeTaskIntervalIdMap = new Map<string, NodeJS.Timeout>();
 
   constructor(connection: Connection) {
     this.accountRepository = connection.getCustomRepository(AccountRepository);
@@ -65,6 +69,8 @@ export default class StoryService {
           await this.taskRepository.update(task.id, {
             status: TaskStatus.RUNNING
           });
+          this.clearIntervalIfExists(login, this.executeTaskIntervalIdMap);
+          this.clearIntervalIfExists(login, this.pauseTaskIntervalIdMap);
           await this.executeTask(login);
         }
       } else {
@@ -92,6 +98,8 @@ export default class StoryService {
           status: TaskStatus.END,
           endTime: new Date()
         });
+        this.clearIntervalIfExists(login, this.executeTaskIntervalIdMap);
+        this.clearIntervalIfExists(login, this.pauseTaskIntervalIdMap);
       } else {
         this.logger.warn('No running story task for %s.', login);
       }
@@ -100,14 +108,20 @@ export default class StoryService {
     }
   };
 
-  pause = async (login: string): Promise<void> => {
+  pause = async (login: string, taskToPause?: Task<StoryTaskProperties>): Promise<void> => {
     try {
-      const task = await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY);
+      const task = taskToPause ?? (await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY));
       if (task) {
-        this.logger.info('Pause story task for %s.', login);
+        this.logger.info('Pause story task for %s for 6 hours.', login);
         await this.taskRepository.update(task.id, {
           status: TaskStatus.PAUSE
         });
+        this.clearIntervalIfExists(login, this.executeTaskIntervalIdMap);
+        this.clearIntervalIfExists(login, this.pauseTaskIntervalIdMap);
+        const intervalId = setTimeout(() => {
+          this.start(login);
+        }, 6 * 60 * 60 * 1000);
+        this.pauseTaskIntervalIdMap.set(login, intervalId);
       } else {
         this.logger.warn('No running story task for %s.', login);
       }
@@ -120,20 +134,18 @@ export default class StoryService {
     const task = await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY);
     try {
       if (task && task.status === TaskStatus.RUNNING) {
-        // TODO: review this while loop
-        // first request returns map page
-        let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        let page: CheerioStatic | undefined;
+        let villagePage = false;
         // loop until get to final village page
-        while (page('#mainmap').length > 0 || page('#village_top_main').length === 0) {
+        while (!villagePage) {
           // eslint-disable-next-line no-await-in-loop
           page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+          villagePage = page('#village_top_main').length > 0;
         }
         const inAction = await this.mapService.checkInAction(login, page);
         if (inAction) {
           this.logger.info('Still in action for %s.', login);
-          setTimeout(() => {
-            this.executeTask(login);
-          }, 5000);
+          this.waitForNext(login);
           return;
         }
         const currentFood = await this.mapService.convertFood(login, page);
@@ -142,10 +154,7 @@ export default class StoryService {
         if (currentFood < deckFood) {
           this.logger.info('Not enough food for %s (current: %d).', login, currentFood);
           // TODO: implement add extract food ticket based on option
-          this.logger.info('Pause task for %s', login);
-          await this.taskRepository.update(task.id, {
-            status: TaskStatus.PAUSE
-          });
+          await this.pause(login, task);
           return;
         }
         const mapPage = await getFinalPage(NOBOT_MOBILE_URL.AREA_MAP, login);
@@ -165,15 +174,11 @@ export default class StoryService {
               if (form.length > 0) {
                 await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
                 this.logger.info('Start story battle for %s with duration %d', login, seconds);
-                setTimeout(() => {
-                  this.executeTask(login);
-                }, seconds * 1000);
+                this.waitForNext(login, seconds);
                 return;
               }
               this.logger.error('No form found for %s.', login);
-              await this.taskRepository.update(task.id, {
-                status: TaskStatus.PAUSE
-              });
+              await this.pause(login, task);
               return;
             }
             this.logger.error('No nextUrl found for %s, retry once.', login);
@@ -183,21 +188,31 @@ export default class StoryService {
         } else {
           this.logger.error('No enemy found for %s, retry once.', login);
         }
-        setTimeout(() => {
-          this.executeTask(login);
-        }, 5000);
+        this.waitForNext(login);
       } else {
         this.logger.warn('Task is not running any more for %s.', login);
-        // TODO: stop
       }
     } catch (err) {
       this.logger.error(err);
       // pause task when error
       if (task) {
-        await this.taskRepository.update(task.id, {
-          status: TaskStatus.PAUSE
-        });
+        await this.pause(login, task);
       }
+    }
+  };
+
+  private waitForNext = (login: string, seconds = 5): void => {
+    const interval = setTimeout(() => {
+      this.executeTask(login);
+    }, seconds * 1000);
+    this.executeTaskIntervalIdMap.set(login, interval);
+  };
+
+  private clearIntervalIfExists = (login: string, map: Map<string, NodeJS.Timeout>): void => {
+    const intervalId = map.get(login);
+    if (intervalId) {
+      clearInterval(intervalId);
+      map.delete(login);
     }
   };
 }
