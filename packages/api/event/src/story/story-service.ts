@@ -169,6 +169,19 @@ export default class StoryService {
     throw new Error(`Unable to get status for ${login}`);
   };
 
+  getChapterReward = async (login: string): Promise<void> => {
+    const page = await makeMobileRequest(NOBOT_MOBILE_URL.CATTALE_CHAPTER_REWARD, login);
+    const forms = page('form[action*=chapter_reward_list]');
+    if (forms.length) {
+      forms.each(async (i) => {
+        const form = forms.eq(i);
+        await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+      });
+    } else {
+      this.logger.info('No more chapter rewards for %s.', login);
+    }
+  };
+
   private executeTask = async (login: string): Promise<void> => {
     const task = await this.taskRepository.findSingleTaskByAccountAndType(login, TaskType.STORY);
     try {

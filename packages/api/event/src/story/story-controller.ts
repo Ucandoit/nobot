@@ -67,4 +67,20 @@ export default class StoryController {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
     }
   }
+
+  @RequestMapping('/reward/chapter')
+  getChapterReward(req: Request, res: Response): void {
+    try {
+      const login = getQueryParamAsString(req, 'login');
+      if (login) {
+        this.storyService.getChapterReward(login);
+        res.status(HttpStatus.OK).send();
+      } else {
+        this.storyService.getChapterRewardForAll();
+        res.status(HttpStatus.OK).send();
+      }
+    } catch (err) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
+    }
+  }
 }
