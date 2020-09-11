@@ -83,4 +83,20 @@ export default class StoryController {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
     }
   }
+
+  @RequestMapping('/reward/point')
+  getPointReward(req: Request, res: Response): void {
+    try {
+      const login = getQueryParamAsString(req, 'login');
+      if (login) {
+        this.storyService.getPointReward(login);
+        res.status(HttpStatus.OK).send();
+      } else {
+        this.storyService.getPointRewardForAll();
+        res.status(HttpStatus.OK).send();
+      }
+    } catch (err) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
+    }
+  }
 }

@@ -169,16 +169,66 @@ export default class StoryService {
     throw new Error(`Unable to get status for ${login}`);
   };
 
+  getChapterRewardForAll = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      this.getChapterReward,
+      20
+    );
+  };
+
   getChapterReward = async (login: string): Promise<void> => {
+    this.logger.info('Get chapter rewards for %s.', login);
     const page = await makeMobileRequest(NOBOT_MOBILE_URL.CATTALE_CHAPTER_REWARD, login);
     const forms = page('form[action*=chapter_reward_list]');
     if (forms.length) {
-      forms.each(async (i) => {
-        const form = forms.eq(i);
-        await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
-      });
+      for (let i = 0; i < forms.length; i++) {
+        let form = forms.eq(i);
+        const rewardId = form.find('input[name=id]').val();
+        this.logger.info('Get chapter reward %s for %s.', rewardId, login);
+        // eslint-disable-next-line no-await-in-loop
+        const resultPage = await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+        if (resultPage('form').length > 0) {
+          if ((rewardId === '805' || rewardId === '810') && (login.startsWith('zz') || login.startsWith('zyk'))) {
+            form = resultPage('form[action*=mobile_recruit_rental_card]');
+            this.logger.info('Recruit rental card for %s.', login);
+          } else {
+            form = resultPage('form[action*=mobile_get_cattale_rental_card]');
+            this.logger.info('Store rental card for %s.', login);
+          }
+          // eslint-disable-next-line no-await-in-loop
+          await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+        }
+      }
     } else {
       this.logger.info('No more chapter rewards for %s.', login);
+    }
+  };
+
+  getPointRewardForAll = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      this.getPointReward,
+      20
+    );
+  };
+
+  getPointReward = async (login: string): Promise<void> => {
+    this.logger.info('Get chapter rewards for %s.', login);
+    const page = await makeMobileRequest(NOBOT_MOBILE_URL.CATTALE_POINT_REWARD, login);
+    const forms = page('form[action*=point_reward_list]');
+    if (forms.length) {
+      for (let i = 0; i < forms.length; i++) {
+        const form = forms.eq(i);
+        const rewardId = form.find('input[name=id]').val();
+        this.logger.info('Get point reward %s for %s.', rewardId, login);
+        // eslint-disable-next-line no-await-in-loop
+        await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+      }
+    } else {
+      this.logger.info('No more point rewards for %s.', login);
     }
   };
 
