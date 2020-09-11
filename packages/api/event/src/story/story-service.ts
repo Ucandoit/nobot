@@ -216,7 +216,7 @@ export default class StoryService {
   };
 
   getPointReward = async (login: string): Promise<void> => {
-    this.logger.info('Get chapter rewards for %s.', login);
+    this.logger.info('Get point rewards for %s.', login);
     const page = await makeMobileRequest(NOBOT_MOBILE_URL.CATTALE_POINT_REWARD, login);
     const forms = page('form[action*=point_reward_list]');
     if (forms.length) {
