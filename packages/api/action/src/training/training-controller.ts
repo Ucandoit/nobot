@@ -7,9 +7,15 @@ import TrainingService from './training-service';
 export default class VillageController {
   @inject(TrainingService) trainingService: TrainingService;
 
-  @RequestMapping('/trainingSample')
+  @RequestMapping('/sample')
   async trainingSample(req: Request, res: Response): Promise<void> {
     this.trainingService.trainingSample();
+    res.status(200).send();
+  }
+
+  @RequestMapping('/cancelSample')
+  async cancelSample(req: Request, res: Response): Promise<void> {
+    this.trainingService.cancelSample();
     res.status(200).send();
   }
 }

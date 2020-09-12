@@ -2,6 +2,7 @@ import {
   asyncForEach,
   executeConcurrent,
   getFinalPage,
+  makeMobileRequest,
   makePostMobileRequest,
   nobotUtils,
   NOBOT_MOBILE_URL,
@@ -242,5 +243,36 @@ export default class TrainingService {
         'integer'
       ) as number
     };
+  };
+
+  cancelSample = async (): Promise<void> => {
+    const accounts = await this.accountRepository.getMobileAccounts();
+    executeConcurrent(
+      accounts.map((account) => account.login),
+      async (login: string) => {
+        this.logger.info('Start cancel training for %s.', login);
+        let page = await getFinalPage(NOBOT_MOBILE_URL.VILLAGE, login);
+        const commandInfos = page('.sp_village_command_info');
+        await commandInfos.each(async (index) => {
+          const commandInfo = commandInfos.eq(index);
+          if (commandInfo.html()?.includes(he.encode('修練'))) {
+            const url = commandInfo.find('a').first().attr('href');
+            if (url) {
+              page = await makeMobileRequest(url, login, false);
+              const form = page('#main form');
+              if (form.length > 0) {
+                await makePostMobileRequest(form.attr('action') as string, login, form.serialize(), false);
+                this.logger.info('Cancel training succeed for %s.', login);
+              } else {
+                this.logger.error('Unable to find cancel form for %s.', login);
+              }
+            } else {
+              this.logger.error('Unable to find cancel url for %s.', login);
+            }
+          }
+        });
+      },
+      10
+    );
   };
 }
