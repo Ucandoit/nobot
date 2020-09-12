@@ -9,6 +9,7 @@ import WarService from './war/war-service';
   await nobotApp.start();
   const warService = nobotApp.getContainer().get(WarService);
   scheduleJob('0 0 5 * * *', warService.stopAll);
+  // scheduleJob('0 10 15 * * *', warService.startAll);
   // const countryBattleService = nobotApp.getContainer().get(CountryBattleService);
   // countryBattleService.startCountryBattle('zz0001');
   // const warConfigService = nobotApp.getContainer().get(WarConfigService);
