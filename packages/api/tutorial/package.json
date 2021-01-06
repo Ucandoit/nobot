@@ -17,7 +17,7 @@
   "dependencies": {
     "@nobot-core/commons": "0.1.0",
     "@nobot-core/database": "0.1.0",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "express": "^4.17.1",
     "inversify": "^5.0.1",
     "log4js": "^6.2.1",
